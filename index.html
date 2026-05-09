@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pekerja Lepas — Manajemen Waktu Pekerjaan</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="app-logo">
+        <svg viewBox="0 0 28 28" fill="none"><rect x="4" y="7" width="20" height="16" rx="3" stroke="white" stroke-width="1.8"/><path d="M9 7V6a5 5 0 0110 0v1" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14h10M9 18h6" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <div class="header-text">
+        <h1 class="app-title">Pekerja Lepas</h1>
+        <p class="app-subtitle">Manajemen &amp; Pencatat Waktu</p>
+      </div>
+      <div class="header-right">
+        <div class="session-info">
+          <div class="session-name" id="user-display-name">-</div>
+          <div class="session-role">User</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Keluar
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <div class="nav-inner">
+      <button class="nav-btn active" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" onclick="showPage('pekerjaan')">
+        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 6v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Pekerjaan
+      </button>
+      <button class="nav-btn" onclick="showPage('laporan')">
+        <svg viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Laporan
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="page active">
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="filter-row" id="filter-row"></div>
+      <div class="table-card">
+        <table>
+          <thead><tr>
+            <th style="width:36%">Nama Pekerjaan</th>
+            <th style="width:26%">Tanggal</th>
+            <th style="width:18%">Durasi</th>
+            <th style="width:12%">Status</th>
+            <th style="width:8%">Aksi</th>
+          </tr></thead>
+          <tbody id="dash-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PEKERJAAN -->
+    <section id="pekerjaan" class="page">
+      <div class="card form-card">
+        <h2 class="card-title" id="form-title-label">Input Pekerjaan Baru</h2>
+        <div class="form-group">
+          <label for="inp-nama">Nama pekerjaan</label>
+          <input type="text" id="inp-nama" placeholder="Contoh: Desain logo klien A">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="inp-hari">Hari</label>
+            <input type="text" id="inp-hari" placeholder="Senin">
+          </div>
+          <div class="form-group">
+            <label for="inp-tgl">Tanggal</label>
+            <input type="date" id="inp-tgl">
+          </div>
+          <div class="form-group">
+            <label for="inp-tahun">Tahun</label>
+            <input type="text" id="inp-tahun" readonly>
+          </div>
+        </div>
+        <div class="stopwatch-block" id="sw-block">
+          <label>Stopwatch</label>
+          <div class="sw-display" id="sw-display">00:00:00</div>
+          <div class="sw-btns">
+            <button class="sw-btn btn-mulai" id="btn-mulai" onclick="swToggle()">
+              <svg viewBox="0 0 16 16" fill="none"><polygon points="4,2 14,8 4,14" fill="currentColor"/></svg> Mulai
+            </button>
+            <button class="sw-btn btn-stop" onclick="swStop()">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="10" height="10" rx="1.5" fill="currentColor"/></svg> Berhenti
+            </button>
+            <button class="sw-btn btn-reset" onclick="swReset()">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8a5 5 0 1 0 1.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 4.5V8H6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Reset
+            </button>
+          </div>
+        </div>
+        <!-- Edit mode: input durasi manual -->
+        <div class="form-group" id="edit-durasi-wrap" style="display:none">
+          <label>Durasi (format HH:MM:SS)</label>
+          <input type="text" id="inp-durasi-edit" placeholder="01:30:00">
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn-primary btn-full" id="btn-simpan" onclick="savePekerjaan()">
+            <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M13 5l-6 6-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Simpan Pekerjaan
+          </button>
+          <button class="btn-cancel" id="btn-batal-edit" onclick="cancelEdit()" style="display:none;padding:10px 18px">Batal Edit</button>
+        </div>
+      </div>
+
+      <div class="sec-title">Daftar Pekerjaan</div>
+      <div class="table-card">
+        <table>
+          <thead><tr>
+            <th style="width:36%">Nama</th>
+            <th style="width:26%">Tanggal</th>
+            <th style="width:18%">Durasi</th>
+            <th style="width:12%">Status</th>
+            <th style="width:8%">Aksi</th>
+          </tr></thead>
+          <tbody id="pek-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LAPORAN -->
+    <section id="laporan" class="page">
+      <!-- Filter bulan laporan -->
+      <div class="card" style="margin-bottom:1.2rem;padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <label style="font-size:13px;font-weight:600;color:var(--gray-600);white-space:nowrap">Filter Laporan:</label>
+          <div class="filter-row" id="laporan-filter" style="margin:0;flex:1"></div>
+          <button class="btn-primary" onclick="doPrint()" style="padding:9px 18px;font-size:13.5px;white-space:nowrap;flex-shrink:0">
+            <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><rect x="3" y="5" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M5 5V3a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="1.5"/><path d="M5 10h6M5 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Cetak PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="edit-hint">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Klik teks pada kop surat untuk mengedit. Klik kotak logo untuk ganti gambar.
+      </div>
+      <input type="file" id="logo-input" accept="image/*">
+
+      <div class="report-wrap" id="report-wrap">
+        <div class="kop">
+          <div class="kop-logo-box" onclick="document.getElementById('logo-input').click()" title="Klik ganti logo">
+            <div id="logo-display">
+              <div class="logo-placeholder">
+                <svg viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="4" stroke="#1a6fca" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M10 22l5-6 4 5 3-3 4 4" stroke="#1a6fca" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="12" r="2" stroke="#1a6fca" stroke-width="1.5"/></svg>
+                <span>Klik ganti logo</span>
+              </div>
+            </div>
+          </div>
+          <div class="kop-info">
+            <div class="kop-name" contenteditable="true">Nama Studio / Perusahaan</div>
+            <div class="kop-sub" contenteditable="true">Jl. Contoh No. 1, Yogyakarta &nbsp;|&nbsp; 08xx-xxxx-xxxx &nbsp;|&nbsp; email@domain.com</div>
+          </div>
+        </div>
+        <div class="kop-stripe"></div>
+        <div class="report-body">
+          <div class="report-meta">
+            <div>
+              <div class="report-title" contenteditable="true">Laporan Pekerjaan</div>
+              <div class="report-period" id="report-period"></div>
+            </div>
+            <div class="report-no-wrap">
+              <div class="report-no-label">No. Laporan</div>
+              <div class="report-no-val" id="report-no"></div>
+            </div>
+          </div>
+          <div class="rstat-grid" id="rstat-grid"></div>
+          <table class="report-table">
+            <thead><tr>
+              <th style="width:5%">No</th>
+              <th style="width:38%">Nama Pekerjaan</th>
+              <th style="width:25%">Tanggal</th>
+              <th style="width:18%">Durasi</th>
+              <th style="width:14%">Status</th>
+            </tr></thead>
+            <tbody id="print-tbody"></tbody>
+          </table>
+          <div class="ttd-section">
+            <div class="ttd-box">
+              <div class="ttd-label">Mengetahui,</div>
+              <div class="ttd-city" contenteditable="true">Yogyakarta, <span id="ttd-tgl-1"></span></div>
+              <div class="ttd-space"></div>
+              <div class="ttd-name" contenteditable="true">Nama Klien / Atasan</div>
+              <div class="ttd-role" contenteditable="true">Jabatan</div>
+            </div>
+            <div class="ttd-box">
+              <div class="ttd-label">Yang membuat laporan,</div>
+              <div class="ttd-city" contenteditable="true">Yogyakarta, <span id="ttd-tgl-2"></span></div>
+              <div class="ttd-space"></div>
+              <div class="ttd-name" contenteditable="true" id="ttd-nama-desainer">Nama Desainer</div>
+              <div class="ttd-role" contenteditable="true">Web &amp; Visual Designer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL KONFIRMASI HAPUS -->
+  <div class="modal-overlay" id="modal-hapus">
+    <div class="modal">
+      <div class="modal-title">Hapus Pekerjaan?</div>
+      <p style="font-size:14px;color:var(--gray-600);line-height:1.6">Pekerjaan <strong id="hapus-target-nama"></strong> akan dihapus permanen.</p>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal('modal-hapus')">Batal</button>
+        <button class="btn-primary" onclick="confirmHapus()" style="padding:9px 20px;background:linear-gradient(135deg,#A32D2D,#C94040)">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

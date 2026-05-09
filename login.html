@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Pekerja Lepas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:       #1a6fca;
+      --blue-dark:  #0C447C;
+      --blue-light: #E6F1FB;
+      --blue-bdr:   #B5D4F4;
+      --blue-text:  #185FA5;
+      --white:      #ffffff;
+      --gray-50:    #F7F9FC;
+      --gray-100:   #EEF2F8;
+      --gray-200:   #D8E4F2;
+      --gray-400:   #8BA5C4;
+      --gray-600:   #4A6280;
+      --gray-800:   #1C2D40;
+      --danger:     #A32D2D;
+      --danger-bg:  #FCEBEB;
+      --danger-bdr: #F09595;
+      --font:       'Plus Jakarta Sans', sans-serif;
+      --mono:       'JetBrains Mono', monospace;
+    }
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--gray-50);
+      color: var(--gray-800);
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(26,111,202,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(12,68,124,0.06) 0%, transparent 60%),
+        #F0F5FC;
+    }
+
+    /* BRAND */
+    .brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .brand-icon {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      box-shadow: 0 8px 24px rgba(26,111,202,0.3);
+    }
+    .brand-icon svg { width: 28px; height: 28px; }
+    .brand-name {
+      font-size: 22px; font-weight: 700;
+      color: var(--blue-dark);
+      letter-spacing: -0.5px;
+    }
+    .brand-sub {
+      font-size: 13px; color: var(--gray-400);
+      margin-top: 4px;
+    }
+
+    /* CARD */
+    .login-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 20px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 40px rgba(26,111,202,0.10);
+    }
+
+    /* ROLE TABS */
+    .role-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: var(--gray-100);
+      border-radius: 12px;
+      padding: 5px;
+      margin-bottom: 28px;
+    }
+    .role-tab {
+      display: flex; align-items: center; justify-content: center;
+      gap: 7px;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 9px;
+      font-family: var(--font);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray-400);
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .role-tab svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .role-tab.active {
+      background: var(--white);
+      color: var(--blue-dark);
+      box-shadow: 0 2px 8px rgba(26,111,202,0.12);
+    }
+
+    /* FORM */
+    .form-title {
+      font-size: 17px; font-weight: 700;
+      color: var(--blue-dark);
+      margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 12px; font-weight: 600;
+      color: var(--gray-600);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 7px;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap svg {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      width: 16px; height: 16px;
+      color: var(--gray-400); pointer-events: none;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px 10px 38px;
+      border: 1px solid var(--gray-200);
+      border-radius: 9px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--gray-800);
+      background: var(--gray-50);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .form-group input:focus {
+      border-color: var(--blue);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(26,111,202,0.1);
+    }
+
+    /* ERROR */
+    .error-msg {
+      display: none;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-bdr);
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--danger);
+      margin-bottom: 16px;
+      align-items: center; gap: 8px;
+    }
+    .error-msg.show { display: flex; }
+    .error-msg svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* BUTTON */
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+      color: var(--white);
+      border: none;
+      border-radius: 9px;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(26,111,202,0.35);
+      transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(26,111,202,0.45);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login svg { width: 17px; height: 17px; }
+
+    /* DEMO HINT */
+    .demo-hint {
+      margin-top: 20px;
+      background: var(--blue-light);
+      border: 1px solid var(--blue-bdr);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--blue-text);
+      line-height: 1.7;
+    }
+    .demo-hint strong { color: var(--blue-dark); }
+    .demo-hint .mono { font-family: var(--mono); font-size: 12px; }
+
+    /* FOOTER */
+    .login-footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--gray-400);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="7" width="20" height="16" rx="3" stroke="white" stroke-width="1.8"/>
+        <path d="M9 7V6a5 5 0 0110 0v1" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M9 14h10M9 18h6" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="brand-name">Pekerja Lepas</div>
+    <div class="brand-sub">Manajemen &amp; Pencatat Waktu Pekerjaan</div>
+  </div>
+
+  <div class="login-card">
+
+    <!-- ROLE TABS -->
+    <div class="role-tabs">
+      <button class="role-tab active" id="tab-user" onclick="switchRole('user')">
+        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        User
+      </button>
+      <button class="role-tab" id="tab-admin" onclick="switchRole('admin')">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M9 2l1.5 4H15l-3.5 2.5 1.3 4L9 10l-3.8 2.5 1.3-4L3 6h4.5L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        Admin
+      </button>
+    </div>
+
+    <div class="form-title" id="form-title">Masuk sebagai User</div>
+
+    <!-- ERROR -->
+    <div class="error-msg" id="error-msg">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3M8 10.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span id="error-text">Username atau password salah.</span>
+    </div>
+
+    <!-- FORM -->
+    <form onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label>Username</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="inp-username" placeholder="Masukkan username" autocomplete="username" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 18 18" fill="none"><rect x="4" y="8" width="10" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 8V6a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="password" id="inp-password" placeholder="Masukkan password" autocomplete="current-password" required>
+        </div>
+      </div>
+      <button type="submit" class="btn-login" id="btn-login">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M7 9h7M11 6l3 3-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 4H5a2 2 0 00-2 2v6a2 2 0 002 2h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Masuk
+      </button>
+    </form>
+
+    <div class="demo-hint" id="demo-hint">
+      <strong>Akun default (setelah initSheets):</strong><br>
+      Admin — <span class="mono">admin</span> / <span class="mono">admin123</span><br>
+      User &nbsp;— <span class="mono">user1</span> / <span class="mono">user123</span>
+    </div>
+  </div>
+
+  <div class="login-footer">© 2025 Pekerja Lepas. Semua hak dilindungi.</div>
+
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
