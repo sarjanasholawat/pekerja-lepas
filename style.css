@@ -989,3 +989,145 @@ tr:hover td {
   .form-row { grid-template-columns:1fr; }
   .form-row .form-group:last-child { grid-column:auto; }
 }
+
+/* ==================== TAMBAHAN v3 ====================
+   Mode toggle, kategori, select tahun, laporan read-only
+====================================================== */
+
+/* Mode toggle stopwatch vs WIB */
+.mode-toggle {
+  display: flex; gap: 6px;
+  background: var(--gray-100);
+  border-radius: 10px; padding: 4px;
+}
+.mode-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 8px 10px; border: none; border-radius: 7px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  color: var(--gray-400); background: transparent; cursor: pointer;
+  transition: all 0.18s;
+}
+.mode-btn svg { width: 15px; height: 15px; }
+.mode-btn.active {
+  background: var(--white); color: var(--blue-dark);
+  box-shadow: 0 2px 8px rgba(26,111,202,0.12);
+}
+
+/* Select tahun — sama gaya seperti input */
+#inp-tahun {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px; color: var(--gray-800);
+  background: var(--gray-50); outline: none;
+  cursor: pointer; appearance: none;
+}
+#inp-tahun:focus {
+  border-color: var(--blue); background: var(--white);
+  box-shadow: 0 0 0 3px rgba(26,111,202,0.1);
+}
+
+/* Kategori select */
+.kategori-wrap select {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--gray-200); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 14px; color: var(--gray-800);
+  background: var(--gray-50); outline: none; cursor: pointer; appearance: none;
+}
+.kategori-wrap select:focus {
+  border-color: var(--blue); background: var(--white);
+  box-shadow: 0 0 0 3px rgba(26,111,202,0.1);
+}
+
+/* WIB time inputs */
+input[type="time"] {
+  padding: 9px 12px;
+  border: 1px solid var(--gray-200); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 15px; color: var(--gray-800);
+  background: var(--gray-50); outline: none;
+}
+input[type="time"]:focus {
+  border-color: var(--blue); background: var(--white);
+  box-shadow: 0 0 0 3px rgba(26,111,202,0.1);
+}
+
+/* Laporan filter kategori */
+#laporan-filter-kategori {
+  padding: 6px 10px; border: 1px solid var(--gray-200);
+  border-radius: 99px; font-family: var(--font-body); font-size: 12px;
+  color: var(--gray-600); background: var(--white); cursor: pointer;
+  outline: none; appearance: none;
+}
+#laporan-filter-kategori:focus { border-color: var(--blue); }
+
+/* Kop surat laporan user: read-only (no hover outline) */
+#report-wrap .kop-name,
+#report-wrap .kop-sub,
+#report-wrap .report-title,
+#report-wrap .ttd-city,
+#report-wrap .ttd-name,
+#report-wrap .ttd-role {
+  cursor: default;
+}
+#report-wrap [contenteditable]:hover { outline: none; }
+#report-wrap [contenteditable]:focus { outline: none; pointer-events: none; }
+
+/* Kop logo laporan user: non-clickable */
+#report-wrap .kop-logo-box { cursor: default; }
+#report-wrap .kop-logo-box:hover { transform: none; }
+
+/* Rstat — laporan */
+.rstat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 16px;
+}
+.rstat {
+  background: var(--blue-light); border: 1px solid var(--blue-border);
+  border-radius: 7px; padding: 10px 12px;
+}
+.rstat-label { font-size: 10px; color: var(--blue-text); font-weight: 600; text-transform: uppercase; margin-bottom: 3px; }
+.rstat-val   { font-size: 16px; font-weight: 700; color: var(--blue-dark); font-family: var(--font-mono); }
+
+/* TTD */
+.ttd-section { display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:12px; padding-top:16px; border-top:1px solid var(--gray-200); }
+.ttd-box { text-align:center; }
+.ttd-label { font-size:11px; color:var(--gray-400); margin-bottom:3px; }
+.ttd-city  { font-size:12.5px; color:var(--gray-600); margin-bottom:10px; }
+.ttd-space { height:60px; border-bottom:1px solid var(--gray-200); margin-bottom:8px; }
+.ttd-name  { font-size:13px; font-weight:700; color:var(--gray-800); }
+.ttd-role  { font-size:11px; color:var(--gray-400); margin-top:2px; }
+
+/* Kop surat */
+.kop { background:linear-gradient(135deg,#0C447C 0%,#1a6fca 60%,#2a8ef0 100%); padding:20px 24px; display:flex; align-items:center; gap:16px; }
+.kop-logo-box { width:68px; height:68px; background:#fff; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; flex-shrink:0; transition:transform 0.15s; }
+.kop-logo-box:hover { transform:scale(1.05); }
+.kop-logo-box img { width:100%; height:100%; object-fit:contain; }
+.logo-placeholder { display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px; }
+.logo-placeholder svg { width:24px; height:24px; }
+.logo-placeholder span { font-size:9px; color:#185FA5; text-align:center; font-weight:500; }
+.kop-info { flex:1; }
+.kop-name { font-size:18px; font-weight:700; color:#fff; margin-bottom:3px; }
+.kop-sub  { font-size:11.5px; color:rgba(255,255,255,0.7); line-height:1.5; }
+.kop-stripe { height:3px; background:linear-gradient(90deg,#B5D4F4,#E6F1FB,#B5D4F4); }
+.report-body { padding:20px 24px; }
+.report-meta { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px; }
+.report-title { font-size:16px; font-weight:700; color:var(--blue-dark); margin-bottom:3px; }
+.report-period { font-size:12px; color:var(--gray-400); }
+.report-no-wrap { text-align:right; flex-shrink:0; }
+.report-no-label { font-size:10px; color:var(--gray-400); text-transform:uppercase; margin-bottom:2px; }
+.report-no-val   { font-size:13px; font-weight:600; color:var(--blue-dark); font-family:var(--font-mono); }
+.report-wrap { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-md); margin-bottom:1.2rem; }
+
+@media (max-width: 640px) {
+  .mode-btn { font-size:12px; padding:7px 8px; gap:5px; }
+  .rstat-grid { grid-template-columns: 1fr 1fr; }
+  .ttd-section { grid-template-columns: 1fr; gap:1.5rem; }
+  .kop { padding:14px 16px; gap:12px; }
+  .kop-logo-box { width:50px; height:50px; }
+  .kop-name { font-size:15px; }
+  .kop-sub  { font-size:10px; }
+  .report-body { padding:14px 16px; }
+}

@@ -3,52 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pekerja Lepas — Manajemen Waktu Pekerjaan</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Pekerja Lepas</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
 
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="app-logo">
-        <svg viewBox="0 0 28 28" fill="none"><rect x="4" y="7" width="20" height="16" rx="3" stroke="white" stroke-width="1.8"/><path d="M9 7V6a5 5 0 0110 0v1" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14h10M9 18h6" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+<!-- ══ SIDEBAR OVERLAY (mobile) ══ -->
+<div id="sb-overlay" class="sb-overlay"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar" class="sidebar">
+
+  <!-- Logo + Brand -->
+  <div class="sb-header">
+    <div class="sb-logo">
+      <svg viewBox="0 0 28 28" fill="none"><rect x="4" y="7" width="20" height="16" rx="3" stroke="white" stroke-width="1.8"/><path d="M9 7V6a5 5 0 0110 0v1" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14h10M9 18h6" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+    <div class="sb-brand">
+      <div class="sb-brand-name">Pekerja Lepas</div>
+      <div class="sb-brand-sub">Manajemen Waktu</div>
+    </div>
+    <button class="sb-toggle" id="sb-toggle" title="Perkecil/perlebar menu">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L6 8l4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <!-- User Profile -->
+  <div class="sb-user">
+    <div class="sb-user-avatar" id="sb-avatar">—</div>
+    <div class="sb-user-info">
+      <div class="sb-user-name" id="sb-user-name">-</div>
+      <div class="sb-user-role">User</div>
+    </div>
+  </div>
+
+  <!-- Nav Menu -->
+  <nav class="sb-nav">
+    <div class="sb-nav-section">Menu Utama</div>
+
+    <button class="sb-nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+      <div class="sb-icon">
+        <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
       </div>
-      <div class="header-text">
-        <h1 class="app-title">Pekerja Lepas</h1>
-        <p class="app-subtitle">Manajemen &amp; Pencatat Waktu</p>
+      <span class="sb-nav-label">Dashboard</span>
+      <span class="sb-tooltip">Dashboard</span>
+    </button>
+
+    <button class="sb-nav-item" id="nav-pekerjaan" onclick="showPage('pekerjaan')">
+      <div class="sb-icon">
+        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 6v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </div>
-      <div class="header-right">
-        <div class="session-info">
-          <div class="session-name" id="user-display-name">-</div>
-          <div class="session-role">User</div>
+      <span class="sb-nav-label">Pekerjaan</span>
+      <span class="sb-tooltip">Pekerjaan</span>
+    </button>
+
+    <button class="sb-nav-item" id="nav-laporan" onclick="showPage('laporan')">
+      <div class="sb-icon">
+        <svg viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <span class="sb-nav-label">Laporan PDF</span>
+      <span class="sb-tooltip">Laporan PDF</span>
+    </button>
+
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="sb-divider"></div>
+    <button class="sb-logout" onclick="doLogout()">
+      <div class="sb-icon">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M7 16H4a1 1 0 01-1-1V3a1 1 0 011-1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 13l4-4-4-4M16 9H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="sb-nav-label">Keluar</span>
+      <span class="sb-tooltip">Keluar</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ══ MAIN AREA ══ -->
+<div class="sb-main">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <button class="topbar-menu-btn" id="topbar-menu-btn" title="Buka menu">
+      <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <div class="topbar-page-title" id="topbar-page-title">Dashboard</div>
+    <div class="topbar-right">
+      <div class="topbar-user">
+        <div class="topbar-avatar" id="topbar-avatar">—</div>
+        <div>
+          <div class="topbar-name" id="topbar-name">-</div>
+          <div class="topbar-role">User</div>
         </div>
-        <button class="btn-logout" onclick="doLogout()">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Keluar
-        </button>
       </div>
     </div>
   </header>
 
-  <nav class="main-nav">
-    <div class="nav-inner">
-      <button class="nav-btn active" onclick="showPage('dashboard')">
-        <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
-        Dashboard
-      </button>
-      <button class="nav-btn" onclick="showPage('pekerjaan')">
-        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 6v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Pekerjaan
-      </button>
-      <button class="nav-btn" onclick="showPage('laporan')">
-        <svg viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 6h6M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Laporan
-      </button>
-    </div>
-  </nav>
-
-  <main class="main-content">
+  <!-- Page Content -->
+  <div class="content-wrapper">
 
     <!-- DASHBOARD -->
     <section id="dashboard" class="page active">
@@ -57,11 +111,12 @@
       <div class="table-card">
         <table>
           <thead><tr>
-            <th style="width:36%">Nama Pekerjaan</th>
-            <th style="width:26%">Tanggal</th>
-            <th style="width:18%">Durasi</th>
+            <th style="width:26%">Nama Pekerjaan</th>
+            <th style="width:14%">Kategori</th>
+            <th style="width:22%">Tanggal</th>
+            <th style="width:16%">Durasi</th>
             <th style="width:12%">Status</th>
-            <th style="width:8%">Aksi</th>
+            <th style="width:10%">Aksi</th>
           </tr></thead>
           <tbody id="dash-tbody"></tbody>
         </table>
@@ -73,25 +128,56 @@
       <div class="card form-card">
         <h2 class="card-title" id="form-title-label">Input Pekerjaan Baru</h2>
         <div class="form-group">
-          <label for="inp-nama">Nama pekerjaan</label>
+          <label>Nama Pekerjaan</label>
           <input type="text" id="inp-nama" placeholder="Contoh: Desain logo klien A">
+        </div>
+        <div class="form-group">
+          <label>Kategori Proyek</label>
+          <div class="kategori-wrap">
+            <select id="inp-kategori" onchange="onKategoriChange(this.value)">
+              <option value="">— Pilih Kategori —</option>
+              <option value="Desain Grafis">🎨 Desain Grafis</option>
+              <option value="Web Design">🖥️ Web Design</option>
+              <option value="Branding">✨ Branding</option>
+              <option value="Ilustrasi">🖌️ Ilustrasi</option>
+              <option value="Motion Graphic">🎬 Motion Graphic</option>
+              <option value="UI/UX">📐 UI/UX</option>
+              <option value="Print Design">🖨️ Print Design</option>
+              <option value="Social Media">📱 Social Media</option>
+              <option value="Lainnya">📁 Lainnya</option>
+              <option value="__custom__">+ Tambah kategori baru...</option>
+            </select>
+            <input type="text" id="inp-kategori-custom" placeholder="Ketik kategori baru lalu Enter" style="display:none;margin-top:8px" onkeydown="if(event.key==='Enter')konfirmasiKategori()">
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="inp-hari">Hari</label>
+            <label>Hari</label>
             <input type="text" id="inp-hari" placeholder="Senin">
           </div>
           <div class="form-group">
-            <label for="inp-tgl">Tanggal</label>
+            <label>Tanggal</label>
             <input type="date" id="inp-tgl">
           </div>
           <div class="form-group">
-            <label for="inp-tahun">Tahun</label>
-            <input type="text" id="inp-tahun" readonly>
+            <label>Tahun</label>
+            <select id="inp-tahun"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mode Pencatat Waktu</label>
+          <div class="mode-toggle">
+            <button class="mode-btn active" id="mode-sw" onclick="setMode('stopwatch')">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 6v3l2 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6 1.5h4M8 1.5v1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Stopwatch
+            </button>
+            <button class="mode-btn" id="mode-wib" onclick="setMode('wib')">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 8h1M13 8h1M8 2v1M8 13v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Jam WIB
+            </button>
           </div>
         </div>
         <div class="stopwatch-block" id="sw-block">
-          <label>Stopwatch</label>
           <div class="sw-display" id="sw-display">00:00:00</div>
           <div class="sw-btns">
             <button class="sw-btn btn-mulai" id="btn-mulai" onclick="swToggle()">
@@ -105,12 +191,31 @@
             </button>
           </div>
         </div>
-        <!-- Edit mode: input durasi manual -->
+        <div class="stopwatch-block" id="wib-block" style="display:none">
+          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:110px">
+              <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px">Jam Mulai WIB</div>
+              <input type="time" id="wib-mulai" style="width:100%">
+            </div>
+            <div style="flex:1;min-width:110px">
+              <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px">Jam Selesai WIB</div>
+              <input type="time" id="wib-selesai" style="width:100%">
+            </div>
+            <div style="flex:1;min-width:110px">
+              <div style="font-size:11px;font-weight:600;color:var(--blue-text);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px">Durasi Terhitung</div>
+              <div class="sw-display" id="wib-durasi-display" style="font-size:22px;margin:0">00:00:00</div>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <div style="font-size:11px;font-weight:600;color:var(--gray-600);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px">Jam WIB Sekarang</div>
+            <div class="sw-display" id="jam-wib-live" style="font-size:18px;margin:0;color:var(--gray-400)">--:--:--</div>
+          </div>
+        </div>
         <div class="form-group" id="edit-durasi-wrap" style="display:none">
-          <label>Durasi (format HH:MM:SS)</label>
+          <label>Durasi (HH:MM:SS)</label>
           <input type="text" id="inp-durasi-edit" placeholder="01:30:00">
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
           <button class="btn-primary btn-full" id="btn-simpan" onclick="savePekerjaan()">
             <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M13 5l-6 6-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Simpan Pekerjaan
@@ -118,16 +223,16 @@
           <button class="btn-cancel" id="btn-batal-edit" onclick="cancelEdit()" style="display:none;padding:10px 18px">Batal Edit</button>
         </div>
       </div>
-
       <div class="sec-title">Daftar Pekerjaan</div>
       <div class="table-card">
         <table>
           <thead><tr>
-            <th style="width:36%">Nama</th>
-            <th style="width:26%">Tanggal</th>
-            <th style="width:18%">Durasi</th>
+            <th style="width:26%">Nama</th>
+            <th style="width:14%">Kategori</th>
+            <th style="width:22%">Tanggal</th>
+            <th style="width:16%">Durasi</th>
             <th style="width:12%">Status</th>
-            <th style="width:8%">Aksi</th>
+            <th style="width:10%">Aksi</th>
           </tr></thead>
           <tbody id="pek-tbody"></tbody>
         </table>
@@ -136,44 +241,39 @@
 
     <!-- LAPORAN -->
     <section id="laporan" class="page">
-      <!-- Filter bulan laporan -->
-      <div class="card" style="margin-bottom:1.2rem;padding:16px 20px">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <label style="font-size:13px;font-weight:600;color:var(--gray-600);white-space:nowrap">Filter Laporan:</label>
+      <div class="card" style="margin-bottom:1.2rem;padding:14px 18px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12.5px;font-weight:600;color:var(--gray-600);white-space:nowrap">Filter Bulan:</label>
           <div class="filter-row" id="laporan-filter" style="margin:0;flex:1"></div>
-          <button class="btn-primary" onclick="doPrint()" style="padding:9px 18px;font-size:13.5px;white-space:nowrap;flex-shrink:0">
-            <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><rect x="3" y="5" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M5 5V3a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="1.5"/><path d="M5 10h6M5 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <select id="laporan-filter-kategori" onchange="setLaporanFilterKategori(this.value)" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:99px;font-size:12px;background:var(--white);cursor:pointer;outline:none;min-width:130px">
+            <option value="all">Semua Kategori</option>
+          </select>
+          <button class="btn-primary" onclick="doPrint()" style="padding:8px 16px;font-size:13px;white-space:nowrap">
+            <svg viewBox="0 0 16 16" fill="none" style="width:13px;height:13px"><rect x="3" y="5" width="10" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M5 5V3a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="1.5"/></svg>
             Cetak PDF
           </button>
         </div>
       </div>
-
-      <div class="edit-hint">
-        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Klik teks pada kop surat untuk mengedit. Klik kotak logo untuk ganti gambar.
-      </div>
-      <input type="file" id="logo-input" accept="image/*">
-
       <div class="report-wrap" id="report-wrap">
         <div class="kop">
-          <div class="kop-logo-box" onclick="document.getElementById('logo-input').click()" title="Klik ganti logo">
+          <div class="kop-logo-box" style="cursor:default">
             <div id="logo-display">
               <div class="logo-placeholder">
                 <svg viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="4" stroke="#1a6fca" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M10 22l5-6 4 5 3-3 4 4" stroke="#1a6fca" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="12" r="2" stroke="#1a6fca" stroke-width="1.5"/></svg>
-                <span>Klik ganti logo</span>
+                <span>Logo</span>
               </div>
             </div>
           </div>
           <div class="kop-info">
-            <div class="kop-name" contenteditable="true">Nama Studio / Perusahaan</div>
-            <div class="kop-sub" contenteditable="true">Jl. Contoh No. 1, Yogyakarta &nbsp;|&nbsp; 08xx-xxxx-xxxx &nbsp;|&nbsp; email@domain.com</div>
+            <div class="kop-name" id="rpt-nama">Nama Studio / Perusahaan</div>
+            <div class="kop-sub"  id="rpt-alamat">Alamat &nbsp;|&nbsp; Telp &nbsp;|&nbsp; Email</div>
           </div>
         </div>
         <div class="kop-stripe"></div>
         <div class="report-body">
           <div class="report-meta">
             <div>
-              <div class="report-title" contenteditable="true">Laporan Pekerjaan</div>
+              <div class="report-title" id="rpt-judul">Laporan Pekerjaan</div>
               <div class="report-period" id="report-period"></div>
             </div>
             <div class="report-no-wrap">
@@ -184,49 +284,52 @@
           <div class="rstat-grid" id="rstat-grid"></div>
           <table class="report-table">
             <thead><tr>
-              <th style="width:5%">No</th>
-              <th style="width:38%">Nama Pekerjaan</th>
-              <th style="width:25%">Tanggal</th>
-              <th style="width:18%">Durasi</th>
-              <th style="width:14%">Status</th>
+              <th style="width:4%">No</th>
+              <th style="width:28%">Nama Pekerjaan</th>
+              <th style="width:13%">Kategori</th>
+              <th style="width:22%">Tanggal</th>
+              <th style="width:16%">Durasi</th>
+              <th style="width:13%">Status</th>
             </tr></thead>
             <tbody id="print-tbody"></tbody>
           </table>
           <div class="ttd-section">
             <div class="ttd-box">
               <div class="ttd-label">Mengetahui,</div>
-              <div class="ttd-city" contenteditable="true">Yogyakarta, <span id="ttd-tgl-1"></span></div>
+              <div class="ttd-city" id="rpt-kota1">Yogyakarta, <span id="ttd-tgl-1"></span></div>
               <div class="ttd-space"></div>
-              <div class="ttd-name" contenteditable="true">Nama Klien / Atasan</div>
-              <div class="ttd-role" contenteditable="true">Jabatan</div>
+              <div class="ttd-name" id="rpt-ttd1">Nama Klien / Atasan</div>
+              <div class="ttd-role" id="rpt-jab1">Jabatan</div>
             </div>
             <div class="ttd-box">
               <div class="ttd-label">Yang membuat laporan,</div>
-              <div class="ttd-city" contenteditable="true">Yogyakarta, <span id="ttd-tgl-2"></span></div>
+              <div class="ttd-city" id="rpt-kota2">Yogyakarta, <span id="ttd-tgl-2"></span></div>
               <div class="ttd-space"></div>
-              <div class="ttd-name" contenteditable="true" id="ttd-nama-desainer">Nama Desainer</div>
-              <div class="ttd-role" contenteditable="true">Web &amp; Visual Designer</div>
+              <div class="ttd-name" id="rpt-ttd2">Nama Desainer</div>
+              <div class="ttd-role" id="rpt-jab2">Web &amp; Visual Designer</div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-  </main>
+  </div><!-- /content-wrapper -->
+</div><!-- /sb-main -->
 
-  <!-- MODAL KONFIRMASI HAPUS -->
-  <div class="modal-overlay" id="modal-hapus">
-    <div class="modal">
-      <div class="modal-title">Hapus Pekerjaan?</div>
-      <p style="font-size:14px;color:var(--gray-600);line-height:1.6">Pekerjaan <strong id="hapus-target-nama"></strong> akan dihapus permanen.</p>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="closeModal('modal-hapus')">Batal</button>
-        <button class="btn-primary" onclick="confirmHapus()" style="padding:9px 20px;background:linear-gradient(135deg,#A32D2D,#C94040)">Ya, Hapus</button>
-      </div>
+<!-- MODAL HAPUS -->
+<div class="modal-overlay" id="modal-hapus">
+  <div class="modal">
+    <div class="modal-title">Hapus Pekerjaan?</div>
+    <p style="font-size:13.5px;color:var(--gray-600);line-height:1.6">Pekerjaan <strong id="hapus-target-nama"></strong> akan dihapus permanen.</p>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-hapus')">Batal</button>
+      <button class="btn-primary" onclick="confirmHapus()" style="padding:9px 20px;background:linear-gradient(135deg,#A32D2D,#C94040)">Ya, Hapus</button>
     </div>
   </div>
+</div>
 
-  <script src="api.js"></script>
-  <script src="app.js"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+<script src="sidebar.js"></script>
 </body>
 </html>
