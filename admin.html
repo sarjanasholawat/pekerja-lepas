@@ -105,9 +105,7 @@
       <div class="sb-brand-name">Pekerja Lepas</div>
       <div class="sb-brand-sub">Panel Admin</div>
     </div>
-    <button class="sb-toggle" id="sb-toggle">
-      <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L6 8l4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+
   </div>
   <div class="sb-user">
     <div class="sb-user-avatar" id="sb-avatar">A</div>
@@ -148,6 +146,11 @@
     </button>
   </div>
 </aside>
+
+<!-- Toggle sidebar — mengambang di tengah garis sidebar -->
+<button class="sb-toggle" id="sb-toggle" title="Perkecil/perlebar menu">
+  <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L6 8l4 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
 
 <!-- MAIN -->
 <div class="sb-main">
@@ -343,31 +346,19 @@
     <div class="modal-title" id="modal-user-title">Tambah User Baru</div>
     <div class="form-group">
       <label>Nama Lengkap</label>
-      <div class="input-wrap">
-        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <input type="text" id="modal-nama" placeholder="Nama lengkap">
-      </div>
+      <input type="text" id="modal-nama" placeholder="Nama lengkap">
     </div>
     <div class="form-group">
       <label>Username</label>
-      <div class="input-wrap">
-        <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M9 6v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <input type="text" id="modal-username" placeholder="Username unik">
-      </div>
+      <input type="text" id="modal-username" placeholder="Username unik">
     </div>
     <div class="form-group">
       <label>Password</label>
-      <div class="input-wrap">
-        <svg viewBox="0 0 18 18" fill="none"><rect x="4" y="8" width="10" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 8V6a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <input type="password" id="modal-password" placeholder="Password">
-      </div>
+      <input type="password" id="modal-password" placeholder="Password">
     </div>
     <div class="form-group">
       <label>Role</label>
-      <div class="input-wrap">
-        <svg viewBox="0 0 18 18" fill="none"><path d="M9 2l1.5 4H15l-3.5 2.5 1.3 4L9 10l-3.8 2.5 1.3-4L3 6h4.5L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        <select id="modal-role"><option value="user">User</option><option value="admin">Admin</option></select>
-      </div>
+      <select id="modal-role"><option value="user">User</option><option value="admin">Admin</option></select>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('modal-user')">Batal</button>
@@ -484,13 +475,26 @@ async function saveUser(){
   try{
     const res=editUserId?await API.updateUser(session.id,{id:editUserId,nama,username,password:password||undefined,role}):await API.createUser(session.id,{nama,username,password,role});
     if(!res.success){showToast('Gagal: '+res.error,'error');return;}
-    closeModal('modal-user');loadUsers();showToast(editUserId?'User diperbarui':'User ditambahkan');
+    closeModal('modal-user');
+    await loadUsers();
+    // Simpan ke pl_users agar tab user otomatis update via storage event
+    const latestRes = await API.getUsers(session.id).catch(()=>null);
+    if(latestRes&&latestRes.success) localStorage.setItem('pl_users', JSON.stringify(latestRes.data));
+    showToast(editUserId?'User diperbarui':'User ditambahkan');
   }catch(err){showToast('Error: '+err.message,'error');}
 }
 function openDelete(id,nama){deleteTargetId=id;document.getElementById('delete-target-name').textContent=nama;document.getElementById('modal-delete').classList.add('show');}
 async function confirmDelete(){
-  try{const res=await API.deleteUser(session.id,deleteTargetId);if(!res.success){showToast('Gagal: '+res.error,'error');return;}closeModal('modal-delete');loadUsers();showToast('User dihapus');}
-  catch(err){showToast('Error: '+err.message,'error');}
+  try{
+    const res=await API.deleteUser(session.id,deleteTargetId);
+    if(!res.success){showToast('Gagal: '+res.error,'error');return;}
+    closeModal('modal-delete');
+    await loadUsers();
+    // Update pl_users agar tab user otomatis refresh via storage event
+    const latestRes = await API.getUsers(session.id).catch(()=>null);
+    if(latestRes&&latestRes.success) localStorage.setItem('pl_users', JSON.stringify(latestRes.data));
+    showToast('User dihapus');
+  }catch(err){showToast('Error: '+err.message,'error');}
 }
 
 /* ===== SEMUA PEKERJAAN ===== */

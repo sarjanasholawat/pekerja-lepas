@@ -5,8 +5,8 @@
 //  ⚠️  WAJIB: Ganti API_URL dengan URL deployment Apps Script
 // ============================================================
 
-const API_URL = 'GANTI_DENGAN_URL_APPS_SCRIPT_KAMU';
-// Contoh: 'https://script.google.com/macros/s/AKfycbzf2DFwciEx0BJ_kstjAcjYlMssbcjUSB2XpDbOIf9NWIkWWmPUZBQWQSmBO7dwLv1cGA/exec'
+const API_URL = 'https://script.google.com/macros/s/AKfycbzCuf5vKkybs0iP6k7EqM8S0JWQCP6RfiyY3QLGOhPxyLmVfJ4LPrEk40sz92VeV-wy/exec';
+// Contoh: 'https://script.google.com/macros/s/AKfycbXXXX/exec'
 
 // ==================== FETCH WRAPPER ====================
 async function apiFetch(action, body = {}) {

@@ -45,32 +45,40 @@ const parseDurasi = str => { const p=str.split(':').map(Number); return p.length
 
 // ==================== INIT FORM ====================
 function initForm() {
-  // Isi dropdown tahun (5 tahun ke belakang s/d tahun ini)
-  const selTahun = document.getElementById('inp-tahun');
   const now = new Date();
-  const thisYear = now.getFullYear();
-  for (let y = thisYear; y >= thisYear - 5; y--) {
-    const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y;
-    selTahun.appendChild(opt);
-  }
-  selTahun.value = thisYear;
-
   // Tanggal hari ini
   const tglInput = document.getElementById('inp-tgl');
   tglInput.value = now.toISOString().slice(0,10);
   document.getElementById('inp-hari').value = HARI[now.getDay()];
-
   tglInput.addEventListener('change', function() {
     const d = new Date(this.value);
     document.getElementById('inp-hari').value = HARI[d.getDay()];
-    document.getElementById('inp-tahun').value = d.getFullYear();
   });
-
   // WIB jam input → hitung durasi otomatis
   ['wib-mulai','wib-selesai'].forEach(id => {
     document.getElementById(id).addEventListener('change', hitungDurasiWIB);
   });
+  // Populate proyek dropdown dari projects.js
+  populateProyekDropdown();
+}
+
+// Isi dropdown proyek di form pekerjaan dari data projects
+function populateProyekDropdown() {
+  const sel = document.getElementById('inp-kategori');
+  if (!sel) return;
+  const prjs = JSON.parse(localStorage.getItem('pl_projects') || '[]');
+  const cur  = sel.value;
+  sel.innerHTML = '<option value="">— Pilih Proyek —</option>';
+  prjs.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.nama; opt.textContent = p.nama;
+    sel.appendChild(opt);
+  });
+  // Tambah opsi tanpa proyek
+  const noProj = document.createElement('option');
+  noProj.value = 'Umum'; noProj.textContent = '📁 Umum / Tanpa Proyek';
+  sel.appendChild(noProj);
+  if ([...sel.options].find(o=>o.value===cur)) sel.value = cur;
 }
 
 // ==================== MODE TIMER ====================
@@ -177,37 +185,12 @@ function swStop() {
 }
 function swReset() { swStop(); swSec=0; document.getElementById('sw-display').textContent='00:00:00'; }
 
-// ==================== KATEGORI ====================
-function onKategoriChange(val) {
-  const custom = document.getElementById('inp-kategori-custom');
-  if (val === '__custom__') {
-    custom.style.display = 'block';
-    custom.focus();
-  } else {
-    custom.style.display = 'none';
-  }
-}
-function konfirmasiKategori() {
-  const val = document.getElementById('inp-kategori-custom').value.trim();
-  if (!val) return;
-  const sel = document.getElementById('inp-kategori');
-  // Tambah option baru jika belum ada
-  const existing = [...sel.options].find(o=>o.value===val);
-  if (!existing) {
-    const opt = document.createElement('option');
-    opt.value = val; opt.textContent = '📂 '+val;
-    sel.insertBefore(opt, sel.querySelector('option[value="__custom__"]'));
-  }
-  sel.value = val;
-  document.getElementById('inp-kategori-custom').style.display='none';
-}
+// ==================== PROYEK / KATEGORI ====================
+function onKategoriChange(val) {} // tidak dipakai, dibiarkan agar tidak error
+function konfirmasiKategori() {}
 function getKategori() {
   const sel = document.getElementById('inp-kategori');
-  if (sel.value === '__custom__' || sel.value === '') {
-    const custom = document.getElementById('inp-kategori-custom').value.trim();
-    return custom || '—';
-  }
-  return sel.value;
+  return sel ? (sel.value || '—') : '—';
 }
 
 // ==================== LOAD DATA ====================
@@ -251,7 +234,7 @@ async function savePekerjaan() {
   const nama = document.getElementById('inp-nama').value.trim();
   const tgl  = document.getElementById('inp-tgl').value;
   const hari = document.getElementById('inp-hari').value;
-  const tahun= document.getElementById('inp-tahun').value;
+  const tahun= document.getElementById('inp-tahun').value; // tempat kerja
   const kat  = getKategori();
 
   if (!nama) { showToast('Nama pekerjaan wajib diisi','error'); return; }
@@ -297,7 +280,8 @@ function openEdit(id) {
   document.getElementById('inp-nama').value=j.nama;
   document.getElementById('inp-tgl').value=j.tgl;
   document.getElementById('inp-hari').value=j.hari;
-  document.getElementById('inp-tahun').value=j.tahun;
+  // tempat kerja
+  const twEl=document.getElementById('inp-tahun'); if(twEl) twEl.value=j.tahun||'Dirumah';
   // Kategori
   const sel=document.getElementById('inp-kategori');
   const exists=[...sel.options].find(o=>o.value===j.kategori);
@@ -351,15 +335,262 @@ function actionBtns(id) {
     <button class="btn-icon danger" onclick="openHapus('${id}')" title="Hapus"><svg viewBox="0 0 16 16" fill="none"><path d="M3 5h10M6 5V3h4v2M6 8v5M10 8v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
   </div>`;
 }
+const TEMPAT_ICON = {'Dirumah':'🏠','DiKantor':'🏢','Remote':'💻','Coworking':'☕'};
 function renderRow(j) {
+  const tempatIcon = TEMPAT_ICON[j.tahun] || '';
+  const tempatLabel = j.tahun ? `${tempatIcon} ${j.tahun}` : '—';
   return `<tr>
     <td title="${j.nama}">${j.nama}</td>
     <td>${katBadge(j.kategori)}</td>
     <td>${fmtTgl(j.tgl)}</td>
     <td><span style="font-family:var(--mono);font-size:12.5px">${fmtSec(j.durasi)}</span></td>
-    <td><span class="badge badge-done">${j.status}</span></td>
+    <td><span style="font-size:12px">${tempatLabel}</span></td>
     <td>${actionBtns(j.id)}</td>
   </tr>`;
+}
+
+
+// ============================================================
+//  GRAFIK DASHBOARD — Chart.js
+// ============================================================
+
+let chartInstance  = null;
+let chartPeriod    = 'mingguan'; // mingguan | bulanan | tahunan
+let chartType      = 'bar';      // bar | line | pie
+
+const CHART_COLORS = [
+  '#1a6fca','#2a8ef0','#1D9E75','#F5C842','#E05C3A',
+  '#8B5CF6','#EC4899','#14B8A6','#F97316','#6366F1'
+];
+
+function setChartPeriod(p) {
+  chartPeriod = p;
+  ['mingguan','bulanan','tahunan'].forEach(x => {
+    document.getElementById('tab-'+x).classList.toggle('active', x===p);
+  });
+  renderChart();
+}
+
+function setChartType(t) {
+  chartType = t;
+  ['bar','line','pie'].forEach(x => {
+    document.getElementById('ctype-'+x).classList.toggle('active', x===t);
+  });
+  renderChart();
+}
+
+function initChartYearSelector() {
+  const sel  = document.getElementById('chart-year-sel');
+  if (!sel) return;
+  const now  = new Date().getFullYear();
+  const years = [...new Set(jobs.map(j => new Date(j.tgl).getFullYear()))].sort((a,b)=>b-a);
+  if (!years.includes(now)) years.unshift(now);
+  const cur = sel.value || String(now);
+  sel.innerHTML = years.map(y => `<option value="${y}" ${String(y)===cur?'selected':''}>${y}</option>`).join('');
+}
+
+function renderChart() {
+  const canvas   = document.getElementById('main-chart');
+  const emptyEl  = document.getElementById('chart-empty');
+  const legendEl = document.getElementById('chart-legend');
+  if (!canvas) return;
+
+  const selYear  = document.getElementById('chart-year-sel');
+  const year     = parseInt(selYear?.value) || new Date().getFullYear();
+
+  // Hitung data sesuai periode
+  let labels = [], counts = [], durations = [], colors = [];
+
+  if (chartPeriod === 'tahunan') {
+    // 5 tahun terakhir
+    const thisYear = new Date().getFullYear();
+    for (let y = thisYear - 4; y <= thisYear; y++) {
+      labels.push(String(y));
+      const jj = jobs.filter(j => new Date(j.tgl).getFullYear() === y);
+      counts.push(jj.length);
+      durations.push(+(jj.reduce((a,b)=>a+b.durasi,0)/3600).toFixed(1));
+    }
+    colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+  } else if (chartPeriod === 'bulanan') {
+    const BULAN_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    for (let m = 0; m < 12; m++) {
+      labels.push(BULAN_SHORT[m]);
+      const jj = jobs.filter(j => {
+        const d = new Date(j.tgl);
+        return d.getFullYear()===year && d.getMonth()===m;
+      });
+      counts.push(jj.length);
+      durations.push(+(jj.reduce((a,b)=>a+b.durasi,0)/3600).toFixed(1));
+    }
+    colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+  } else {
+    // Mingguan — 8 minggu terakhir
+    const now = new Date();
+    for (let w = 7; w >= 0; w--) {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - w*7 - now.getDay());
+      weekStart.setHours(0,0,0,0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23,59,59,999);
+      const label = `${weekStart.getDate()}/${weekStart.getMonth()+1}`;
+      labels.push(label);
+      const jj = jobs.filter(j => {
+        const d = new Date(j.tgl);
+        return d >= weekStart && d <= weekEnd;
+      });
+      counts.push(jj.length);
+      durations.push(+(jj.reduce((a,b)=>a+b.durasi,0)/3600).toFixed(1));
+    }
+    colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
+  }
+
+  const hasData = counts.some(c=>c>0);
+  emptyEl.style.display = hasData ? 'none' : 'flex';
+  canvas.style.display  = hasData ? 'block' : 'none';
+
+  if (!hasData) { legendEl.innerHTML=''; return; }
+
+  // Destroy chart lama
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const ctx = canvas.getContext('2d');
+
+  if (chartType === 'pie') {
+    // Pie: distribusi per proyek
+    const prjMap = {};
+    jobs.filter(j => {
+      if (chartPeriod==='tahunan') return true;
+      if (chartPeriod==='bulanan') return new Date(j.tgl).getFullYear()===year;
+      const now2=new Date(), wStart=new Date(now2); wStart.setDate(now2.getDate()-56-now2.getDay()); wStart.setHours(0,0,0,0);
+      return new Date(j.tgl)>=wStart;
+    }).forEach(j => {
+      const k = j.kategori||'Umum';
+      prjMap[k] = (prjMap[k]||0)+1;
+    });
+    const pieLabels = Object.keys(prjMap);
+    const pieData   = Object.values(prjMap);
+    const pieColors = pieLabels.map((_,i)=>CHART_COLORS[i%CHART_COLORS.length]);
+
+    chartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: pieLabels,
+        datasets: [{
+          data: pieData,
+          backgroundColor: pieColors,
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ${ctx.raw} pekerjaan`
+            }
+          }
+        }
+      }
+    });
+
+    legendEl.innerHTML = pieLabels.map((l,i)=>`
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${pieColors[i]}"></div>
+        ${l} (${pieData[i]})
+      </div>`).join('');
+
+  } else {
+    // Bar / Line
+    const isLine = chartType === 'line';
+    const barColor   = 'rgba(26,111,202,0.8)';
+    const barColor2  = 'rgba(29,158,117,0.7)';
+    const lineColor  = '#1a6fca';
+    const lineColor2 = '#1D9E75';
+
+    chartInstance = new Chart(ctx, {
+      type: isLine ? 'line' : 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Jumlah Pekerjaan',
+            data: counts,
+            backgroundColor: isLine ? 'rgba(26,111,202,0.12)' : barColor,
+            borderColor: lineColor,
+            borderWidth: isLine ? 2.5 : 0,
+            borderRadius: isLine ? 0 : 6,
+            fill: isLine,
+            tension: 0.4,
+            pointBackgroundColor: lineColor,
+            pointRadius: isLine ? 4 : 0,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Durasi (jam)',
+            data: durations,
+            backgroundColor: isLine ? 'rgba(29,158,117,0.1)' : barColor2,
+            borderColor: lineColor2,
+            borderWidth: isLine ? 2.5 : 0,
+            borderRadius: isLine ? 0 : 6,
+            fill: isLine,
+            tension: 0.4,
+            pointBackgroundColor: lineColor2,
+            pointRadius: isLine ? 4 : 0,
+            yAxisID: 'y1',
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                if (ctx.datasetIndex===0) return ` ${ctx.raw} pekerjaan`;
+                return ` ${ctx.raw} jam kerja`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#8BA5C4' }
+          },
+          y: {
+            type: 'linear', position: 'left',
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: {
+              stepSize: 1,
+              font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#1a6fca',
+              callback: v => v + ' pek'
+            }
+          },
+          y1: {
+            type: 'linear', position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: {
+              font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#1D9E75',
+              callback: v => v + ' jam'
+            }
+          }
+        }
+      }
+    });
+
+    legendEl.innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:${lineColor}"></div> Jumlah Pekerjaan</div>
+      <div class="legend-item"><div class="legend-dot" style="background:${lineColor2}"></div> Durasi (jam)</div>`;
+  }
 }
 
 // ==================== DASHBOARD ====================
@@ -377,6 +608,10 @@ function renderDash() {
   months.forEach(m=>{fr+=`<button class="fbtn ${filterMonth==m?'active':''}" onclick="setFilter(${m})">${BULAN[m]}</button>`;});
   document.getElementById('filter-row').innerHTML=fr;
   document.getElementById('dash-tbody').innerHTML=fl.length?fl.map(renderRow).join(''):`<tr><td colspan="6" class="empty">Belum ada data</td></tr>`;
+
+  // Render grafik
+  initChartYearSelector();
+  renderChart();
 }
 function setFilter(m){filterMonth=m;renderDash();}
 
@@ -431,15 +666,18 @@ function renderLaporan() {
     <div class="rstat"><div class="rstat-label">Hari Ini</div><div class="rstat-val">${jobs.filter(j=>j.tgl===today).length}</div></div>
   `;
   document.getElementById('print-tbody').innerHTML=fl.length
-    ?fl.map((j,i)=>`<tr>
+    ?fl.map((j,i)=>{
+      const tIcon = TEMPAT_ICON[j.tahun]||'';
+      return `<tr>
         <td>${i+1}</td>
         <td title="${j.nama}">${j.nama}</td>
         <td>${katBadge(j.kategori)}</td>
         <td>${fmtTgl(j.tgl)}</td>
         <td>${fmtSec(j.durasi)}</td>
+        <td style="font-size:12px">${tIcon} ${j.tahun||'—'}</td>
         <td><span class="badge badge-done">${j.status}</span></td>
-      </tr>`).join('')
-    :`<tr><td colspan="6" class="empty">Belum ada data</td></tr>`;
+      </tr>`;}).join('')
+    :`<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
 }
 function setLaporanFilter(m){laporanFilter=m;renderLaporan();}
 function setLaporanFilterKategori(v){laporanFilterKat=v;renderLaporan();}

@@ -1,6 +1,7 @@
 // ============================================================
 //  PEKERJA LEPAS — sidebar.js
-//  Sidebar collapsible + swipe gesture mobile
+//  Sidebar collapsible + swipe gesture + fixed toggle
+//  Posisi & arah panah toggle dikendalikan CSS (.sidebar.collapsed ~ .sb-toggle)
 // ============================================================
 
 (function() {
@@ -8,16 +9,17 @@
   const overlay  = document.getElementById('sb-overlay');
   const toggleBtn= document.getElementById('sb-toggle');
   const menuBtn  = document.getElementById('topbar-menu-btn');
-  let isMobile   = () => window.innerWidth <= 768;
+  const isMobile = () => window.innerWidth <= 768;
 
   // ── COLLAPSE / EXPAND (desktop) ──
   function toggleCollapse() {
     if (isMobile()) return;
     sidebar.classList.toggle('collapsed');
     localStorage.setItem('sb_collapsed', sidebar.classList.contains('collapsed') ? '1' : '0');
+    // CSS sibling selector (.sidebar.collapsed ~ .sb-toggle) otomatis handle posisi & rotasi
   }
 
-  // ── OPEN / CLOSE (mobile) ──
+  // ── OPEN / CLOSE sidebar di mobile ──
   function openMobile() {
     sidebar.classList.add('mobile-open');
     overlay.classList.add('show');
@@ -29,40 +31,38 @@
     document.body.style.overflow = '';
   }
 
-  if (toggleBtn) toggleBtn.addEventListener('click', toggleCollapse);
-  if (menuBtn)   menuBtn.addEventListener('click', () => { isMobile() ? openMobile() : toggleCollapse(); });
-  if (overlay)   overlay.addEventListener('click', closeMobile);
+  // Event listeners
+  if (toggleBtn) toggleBtn.addEventListener('click', () => {
+    isMobile() ? openMobile() : toggleCollapse();
+  });
+  if (menuBtn) menuBtn.addEventListener('click', () => {
+    isMobile() ? openMobile() : toggleCollapse();
+  });
+  if (overlay) overlay.addEventListener('click', closeMobile);
 
-  // ── RESTORE SAVED STATE ──
+  // ── RESTORE STATE dari localStorage ──
   if (!isMobile() && localStorage.getItem('sb_collapsed') === '1') {
     sidebar.classList.add('collapsed');
+    // CSS sibling selector langsung berlaku — tidak perlu JS tambahan
   }
 
   // ── SWIPE GESTURE (mobile) ──
-  let touchStartX = 0, touchStartY = 0;
-
+  let tx = 0, ty = 0;
   document.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
+    tx = e.touches[0].clientX;
+    ty = e.touches[0].clientY;
   }, { passive: true });
 
   document.addEventListener('touchend', e => {
     if (!isMobile()) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
-    if (dy > 60) return; // terlalu vertikal → skip
-
-    // Swipe kanan dari tepi kiri → buka sidebar
-    if (dx > 60 && touchStartX < 40 && !sidebar.classList.contains('mobile-open')) {
-      openMobile();
-    }
-    // Swipe kiri saat sidebar terbuka → tutup
-    if (dx < -60 && sidebar.classList.contains('mobile-open')) {
-      closeMobile();
-    }
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = Math.abs(e.changedTouches[0].clientY - ty);
+    if (dy > 60) return; // gerakan terlalu vertikal, abaikan
+    if (dx > 60 && tx < 40 && !sidebar.classList.contains('mobile-open')) openMobile();
+    if (dx < -60 && sidebar.classList.contains('mobile-open')) closeMobile();
   }, { passive: true });
 
-  // ── AUTO CLOSE saat resize ke desktop ──
+  // ── RESIZE: kembali ke desktop mode ──
   window.addEventListener('resize', () => {
     if (!isMobile()) {
       closeMobile();
@@ -70,14 +70,12 @@
     }
   });
 
-  // ── CLOSE sidebar mobile saat klik nav item ──
-  document.querySelectorAll('.sb-nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (isMobile()) closeMobile();
-    });
+  // ── AUTO CLOSE nav item di mobile ──
+  document.querySelectorAll('.sb-nav-item, .sb-logout').forEach(btn => {
+    btn.addEventListener('click', () => { if (isMobile()) closeMobile(); });
   });
 
-  // ── UPDATE PAGE TITLE di topbar ──
+  // ── UPDATE TOPBAR TITLE ──
   window._setTopbarTitle = function(title) {
     const el = document.getElementById('topbar-page-title');
     if (el) el.textContent = title;

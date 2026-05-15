@@ -90,22 +90,45 @@
 
 .sidebar.collapsed .sb-brand { opacity: 0; width: 0; pointer-events: none; }
 
-/* ── TOGGLE BUTTON ── */
+/* ── TOGGLE BUTTON — mengambang di tepi kanan sidebar, ikut bergerak ── */
 .sb-toggle {
-  position: absolute;
-  top: 14px; right: -12px;
-  width: 24px; height: 24px;
+  position: fixed;
+  left: calc(var(--sb-width) - 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px; height: 52px;
   background: var(--sb-accent);
-  border: 2px solid #fff;
-  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  transition: transform 0.25s;
+  z-index: 400;
+  box-shadow: 3px 0 14px rgba(0,0,0,0.25);
+  transition: left 0.25s cubic-bezier(.4,0,.2,1), background 0.15s;
+  outline: none;
 }
-.sb-toggle svg { width: 12px; height: 12px; color: #fff; transition: transform 0.25s; }
-.sidebar.collapsed .sb-toggle svg { transform: rotate(180deg); }
+.sb-toggle:hover { background: #2681e2; box-shadow: 4px 0 18px rgba(26,111,202,0.4); }
+.sb-toggle svg {
+  width: 13px; height: 13px; color: #fff;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* Default: tombol di tepi kanan sidebar penuh */
+.sidebar ~ .sb-toggle {
+  left: calc(var(--sb-width) - 14px);
+  transition: left 0.25s cubic-bezier(.4,0,.2,1);
+}
+
+/* Saat collapsed: tombol geser mengikuti sidebar yang mengecil, panah balik */
+.sidebar.collapsed ~ .sb-toggle {
+  left: calc(var(--sb-collapsed) - 14px);
+}
+.sidebar.collapsed ~ .sb-toggle svg {
+  transform: rotate(180deg);
+}
 
 /* ── USER PROFILE (tengah sidebar) ── */
 .sb-user {
@@ -357,7 +380,8 @@
     transform: translateX(-100%);
     width: var(--sb-width) !important;
   }
-  .sb-toggle { display: none; }
+  /* Toggle fixed tersembunyi di mobile — pakai hamburger topbar */
+  .sb-toggle { display: none !important; }
   .sb-main {
     margin-left: 0 !important;
   }
