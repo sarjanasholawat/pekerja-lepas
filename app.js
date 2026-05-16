@@ -247,7 +247,10 @@ async function savePekerjaan() {
     return;
   }
 
-  const job = { nama, tgl, hari, tahun: parseInt(tahun), durasi, status:'selesai', kategori:kat };
+  // Ambil jam mulai/selesai jika mode WIB
+  const wibMulai   = timerMode==='wib' ? (document.getElementById('wib-mulai')?.value||'') : '';
+  const wibSelesai = timerMode==='wib' ? (document.getElementById('wib-selesai')?.value||'') : '';
+  const job = { nama, tgl, hari, tahun, durasi, status:'selesai', kategori:kat, wibMulai, wibSelesai };
   const btn = document.getElementById('btn-simpan');
   btn.disabled=true; btn.textContent='Menyimpan...';
 
@@ -668,14 +671,18 @@ function renderLaporan() {
   document.getElementById('print-tbody').innerHTML=fl.length
     ?fl.map((j,i)=>{
       const tIcon = TEMPAT_ICON[j.tahun]||'';
+      const durSec = j.durasi||0;
+      const jamMulai = j.wibMulai||'—';
+      const jamSelesai = j.wibSelesai||'—';
+      const jamStr = (j.wibMulai&&j.wibSelesai) ? `${jamMulai} – ${jamSelesai}` : fmtSec(durSec);
       return `<tr>
         <td>${i+1}</td>
         <td title="${j.nama}">${j.nama}</td>
         <td>${katBadge(j.kategori)}</td>
         <td>${fmtTgl(j.tgl)}</td>
-        <td>${fmtSec(j.durasi)}</td>
+        <td style="font-family:var(--mono);font-size:12px">${jamStr}</td>
+        <td style="font-family:var(--mono);font-size:12px">${fmtSec(durSec)}</td>
         <td style="font-size:12px">${tIcon} ${j.tahun||'—'}</td>
-        <td><span class="badge badge-done">${j.status}</span></td>
       </tr>`;}).join('')
     :`<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
 }
@@ -714,8 +721,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:#1C2D40;pa
 .rstat-label{font-size:10px;color:#185FA5;font-weight:600;text-transform:uppercase;margin-bottom:3px}
 .rstat-val{font-size:15px;font-weight:700;color:#0C447C;font-family:'JetBrains Mono',monospace}
 table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px}
-th{text-align:left;padding:7px 9px;background:#E6F1FB;color:#185FA5;border-bottom:1px solid #B5D4F4;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
-td{padding:7px 9px;border-bottom:1px solid #EEF2F8;color:#1C2D40}
+th{text-align:left;padding:6px 8px;background:#E6F1FB;color:#185FA5;border-bottom:1px solid #B5D4F4;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
+td{padding:6px 8px;border-bottom:1px solid #EEF2F8;color:#1C2D40;font-size:11.5px}
 tr:last-child td{border-bottom:none}
 .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:#E6F1FB;color:#0C447C;font-weight:600}
 .empty{text-align:center;padding:1rem;color:#8BA5C4;font-style:italic}

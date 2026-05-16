@@ -73,9 +73,9 @@ function initSheets() {
   if (!pk) {
     pk = ss.insertSheet(SHEET_PEKERJAAN);
     // kolom ke-9 = kategori (baru)
-    pk.appendRow(['id','userId','nama','tgl','hari','tahun','durasi','status','kategori','createdAt']);
-    pk.getRange(1,1,1,10).setFontWeight('bold').setBackground('#1a6fca').setFontColor('#FFF');
-    [150,120,220,100,90,70,80,90,130,180].forEach((w,i)=>pk.setColumnWidth(i+1,w));
+    pk.appendRow(['id','userId','nama','tgl','hari','tahun','durasi','status','kategori','wibMulai','wibSelesai','createdAt']);
+    pk.getRange(1,1,1,12).setFontWeight('bold').setBackground('#1a6fca').setFontColor('#FFF');
+    [150,120,220,100,90,70,80,90,130,80,80,180].forEach((w,i)=>pk.setColumnWidth(i+1,w));
   }
 
   return {success:true,message:'Sheet berhasil dibuat! Akun: admin/admin123, user1/user123, user2/user456.'};
@@ -136,7 +136,7 @@ function getJobs(body) {
   if(!userId) return {success:false,error:'userId wajib.'};
   const jobs=getAllRows(SHEET_PEKERJAAN)
     .filter(j=>String(j.userId)===String(userId))
-    .map(j=>({id:j.id,nama:j.nama,tgl:j.tgl,hari:j.hari,tahun:parseInt(j.tahun)||0,durasi:parseInt(j.durasi)||0,status:j.status,kategori:j.kategori||''}))
+    .map(j=>({id:j.id,nama:j.nama,tgl:j.tgl,hari:j.hari,tahun:parseInt(j.tahun)||0,durasi:parseInt(j.durasi)||0,status:j.status,kategori:j.kategori||'',wibMulai:j.wibMulai||'',wibSelesai:j.wibSelesai||''}))
     .reverse();
   return {success:true,data:jobs};
 }
@@ -144,7 +144,7 @@ function getJobs(body) {
 function getAllJobs(body) {
   if(!isAdmin(body.requesterId)) return {success:false,error:'Akses ditolak.'};
   const jobs=getAllRows(SHEET_PEKERJAAN)
-    .map(j=>({id:j.id,userId:j.userId,nama:j.nama,tgl:j.tgl,hari:j.hari,tahun:parseInt(j.tahun)||0,durasi:parseInt(j.durasi)||0,status:j.status,kategori:j.kategori||''}))
+    .map(j=>({id:j.id,userId:j.userId,nama:j.nama,tgl:j.tgl,hari:j.hari,tahun:parseInt(j.tahun)||0,durasi:parseInt(j.durasi)||0,status:j.status,kategori:j.kategori||'',wibMulai:j.wibMulai||'',wibSelesai:j.wibSelesai||''}))
     .reverse();
   return {success:true,data:jobs};
 }
