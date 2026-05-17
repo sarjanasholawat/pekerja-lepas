@@ -45,20 +45,17 @@ const parseDurasi = str => { const p=str.split(':').map(Number); return p.length
 
 // ==================== INIT FORM ====================
 function initForm() {
-  const now = new Date();
-  // Tanggal hari ini
+  const now      = new Date();
   const tglInput = document.getElementById('inp-tgl');
   tglInput.value = now.toISOString().slice(0,10);
   document.getElementById('inp-hari').value = HARI[now.getDay()];
+
   tglInput.addEventListener('change', function() {
     const d = new Date(this.value);
     document.getElementById('inp-hari').value = HARI[d.getDay()];
   });
-  // WIB jam input → hitung durasi otomatis
-  ['wib-mulai','wib-selesai'].forEach(id => {
-    document.getElementById(id).addEventListener('change', hitungDurasiWIB);
-  });
-  // Populate proyek dropdown dari projects.js
+
+  // Populate proyek dropdown dari data proyek yang tersimpan
   populateProyekDropdown();
 }
 
@@ -186,19 +183,25 @@ function hitungDurasiWIB() {
 }
 
 function getDurasi() {
-  if (editJobId) return parseDurasi(document.getElementById('inp-durasi-edit').value.trim());
+  // Edit mode: selalu ambil dari input manual
+  if (editJobId) {
+    const val = document.getElementById('inp-durasi-edit').value.trim();
+    return parseDurasi(val);
+  }
+  // Tambah mode stopwatch
   if (timerMode === 'stopwatch') return swSec;
-  // WIB: hitung dari jam mulai & selesai
+  // Tambah mode WIB: hitung dari hidden input
   const mulai   = document.getElementById('wib-mulai').value;
   const selesai = document.getElementById('wib-selesai').value;
   if (!mulai) return 0;
-  const [mh,mm] = mulai.split(':').map(Number);
+  const [mh, mm] = mulai.split(':').map(Number);
   if (selesai) {
-    const [sh,sm] = selesai.split(':').map(Number);
-    let diff = (sh*60+sm)-(mh*60+mm);
-    if (diff < 0) diff += 24*60;
+    const [sh, sm] = selesai.split(':').map(Number);
+    let diff = (sh * 60 + sm) - (mh * 60 + mm);
+    if (diff < 0) diff += 24 * 60;
     return diff * 60;
   }
+  // Belum ada jam selesai — pakai nilai di display durasi
   return parseDurasi(document.getElementById('wib-durasi-display').textContent);
 }
 
@@ -273,16 +276,20 @@ async function savePekerjaan() {
   const nama = document.getElementById('inp-nama').value.trim();
   const tgl  = document.getElementById('inp-tgl').value;
   const hari = document.getElementById('inp-hari').value;
-  const tahun= document.getElementById('inp-tahun').value; // tempat kerja
+  const tahun = document.getElementById('inp-tahun').value; // value: 'Dirumah' atau 'DiKantor'
   const kat  = getKategori();
 
   if (!nama) { showToast('Nama pekerjaan wajib diisi','error'); return; }
 
   const durasi = getDurasi();
-  if (!durasi) {
-    if (editJobId)         showToast('Durasi tidak valid (format HH:MM:SS)','error');
-    else if (timerMode==='stopwatch') showToast('Jalankan stopwatch terlebih dahulu','error');
-    else                   showToast('Isi jam mulai dan selesai','error');
+  if (!durasi || durasi <= 0) {
+    if (editJobId) {
+      showToast('Durasi tidak valid. Gunakan format HH:MM:SS (contoh: 01:30:00)', 'error');
+    } else if (timerMode === 'stopwatch') {
+      showToast('Jalankan stopwatch terlebih dahulu', 'error');
+    } else {
+      showToast('Klik tombol Mulai lalu Selesai terlebih dahulu', 'error');
+    }
     return;
   }
 
