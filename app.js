@@ -247,7 +247,28 @@ function saveJobsLocal(jobsList) {
   localStorage.setItem(LOCAL_JOBS_KEY(), JSON.stringify(jobsList));
 }
 
-// ── Load jobs — coba API dulu, fallback ke localStorage ──
+// ── Migrasi data lama: isi wibMulai/wibSelesai jika belum ada ──
+function migrasiJam(jobsList) {
+  return jobsList.map(j => {
+    if (j.wibMulai && j.wibSelesai) return j; // sudah ada, skip
+    // Hitung dari createdAt dan durasi
+    let selesai, mulai;
+    try {
+      selesai = new Date(j.createdAt || Date.now());
+      // Konversi ke WIB (UTC+7)
+      const utcMs = selesai.getTime() + selesai.getTimezoneOffset() * 60000;
+      const wibSelesai = new Date(utcMs + 7 * 3600000);
+      const wibMulai   = new Date(wibSelesai.getTime() - (j.durasi || 0) * 1000);
+      return {
+        ...j,
+        wibMulai:   wibStr(wibMulai),
+        wibSelesai: wibStr(wibSelesai),
+      };
+    } catch (_) {
+      return j;
+    }
+  });
+}
 async function loadJobs() {
   // Jika API belum dikonfigurasi, langsung pakai localStorage
   const apiReady = typeof API_URL !== 'undefined' && !API_URL.includes('GANTI_DENGAN');
@@ -259,7 +280,7 @@ async function loadJobs() {
         const local    = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
         const localMap = {};
         local.forEach(j => { localMap[String(j.id)] = j; });
-        jobs = res.data.map(j => {
+        jobs = migrasiJam(res.data.map(j => {
           const loc = localMap[String(j.id)] || {};
           return {
             ...j,
@@ -268,7 +289,7 @@ async function loadJobs() {
             tahun:      j.tahun      || loc.tahun      || 'Dirumah',
             kategori:   j.kategori   || loc.kategori   || '',
           };
-        });
+        }));
         saveJobsLocal(jobs);
         renderDash(); renderPekList(); updateKategoriFilter();
         return;
@@ -277,7 +298,9 @@ async function loadJobs() {
   }
 
   // Fallback: baca dari localStorage
-  jobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+  jobs = migrasiJam(JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]'));
+  // Simpan kembali hasil migrasi agar data lama ikut terupdate
+  saveJobsLocal(jobs);
   renderDash();
   renderPekList();
   updateKategoriFilter();
