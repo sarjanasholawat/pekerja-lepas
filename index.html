@@ -173,10 +173,11 @@
       <div class="table-card">
         <table>
           <thead><tr>
-            <th style="width:26%">Nama Pekerjaan</th>
-            <th style="width:14%">Proyek</th>
-            <th style="width:22%">Tanggal</th>
-            <th style="width:16%">Durasi</th>
+            <th style="width:22%">Nama Pekerjaan</th>
+            <th style="width:12%">Proyek</th>
+            <th style="width:18%">Tanggal</th>
+            <th style="width:14%">Jam</th>
+            <th style="width:12%">Durasi</th>
             <th style="width:12%">Tempat</th>
             <th style="width:10%">Aksi</th>
           </tr></thead>
@@ -283,7 +284,8 @@
         </div>
         <div class="form-group" id="edit-durasi-wrap" style="display:none">
           <label>Durasi (HH:MM:SS)</label>
-          <input type="text" id="inp-durasi-edit" placeholder="01:30:00">
+          <div id="edit-jam-info" style="display:none;font-size:12.5px;color:var(--blue-text);background:var(--blue-light);border:1px solid var(--blue-border);border-radius:6px;padding:7px 11px;margin-bottom:8px;font-family:var(--font-mono)"></div>
+          <input type="text" id="inp-durasi-edit" placeholder="00:00:00">
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
           <button class="btn-primary btn-full" id="btn-simpan" onclick="savePekerjaan()">
@@ -297,10 +299,11 @@
       <div class="table-card">
         <table>
           <thead><tr>
-            <th style="width:26%">Nama</th>
-            <th style="width:14%">Proyek</th>
-            <th style="width:22%">Tanggal</th>
-            <th style="width:16%">Durasi</th>
+            <th style="width:22%">Nama</th>
+            <th style="width:12%">Proyek</th>
+            <th style="width:18%">Tanggal</th>
+            <th style="width:14%">Jam</th>
+            <th style="width:12%">Durasi</th>
             <th style="width:12%">Tempat</th>
             <th style="width:10%">Aksi</th>
           </tr></thead>

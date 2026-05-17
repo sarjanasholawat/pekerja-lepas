@@ -336,7 +336,7 @@ function openEdit(id) {
   document.getElementById('inp-tgl').value  = j.tgl;
   document.getElementById('inp-hari').value = j.hari;
 
-  // Tempat kerja (select 2 pilihan)
+  // Tempat kerja
   const twEl = document.getElementById('inp-tahun');
   if (twEl) twEl.value = j.tahun || 'Dirumah';
 
@@ -352,26 +352,36 @@ function openEdit(id) {
     selKat.value = j.kategori || '';
   }
 
-  // Sembunyikan mode toggle & blok timer, tampilkan input durasi manual
-  document.getElementById('sw-block').style.display   = 'none';
-  document.getElementById('wib-block').style.display  = 'none';
-  const modeToggle = document.querySelector('.mode-toggle');
-  if (modeToggle) modeToggle.style.display = 'none';
-  const modeGroup = modeToggle ? modeToggle.closest('.form-group') : null;
-  if (modeGroup) modeGroup.style.display = 'none';
+  // ── Nonaktifkan mode toggle pencatatan waktu ──
+  const modeGroup = document.querySelector('.mode-toggle')?.closest('.form-group');
+  if (modeGroup) {
+    modeGroup.style.opacity     = '0.4';
+    modeGroup.style.pointerEvents = 'none';
+    modeGroup.title = 'Mode pencatatan waktu tidak tersedia saat mengedit';
+  }
+  document.getElementById('sw-block').style.display  = 'none';
+  document.getElementById('wib-block').style.display = 'none';
 
-  // Isi durasi manual
-  document.getElementById('edit-durasi-wrap').style.display = 'block';
-  document.getElementById('inp-durasi-edit').value = fmtSec(j.durasi || 0);
-
-  // Isi info jam WIB jika ada (untuk referensi user saat edit)
-  if (j.wibMulai) {
-    const hint = document.getElementById('inp-durasi-edit');
-    hint.placeholder = `Jam: ${j.wibMulai}${j.wibSelesai ? ' – ' + j.wibSelesai : ''}`;
+  // ── Tampilkan info jam lama (read-only) jika ada ──
+  const jamInfo = document.getElementById('edit-jam-info');
+  if (jamInfo) {
+    if (j.wibMulai) {
+      const jamTeks = j.wibSelesai ? `${j.wibMulai} – ${j.wibSelesai}` : `${j.wibMulai} – ...`;
+      jamInfo.textContent = `⏰ Jam tercatat: ${jamTeks}`;
+      jamInfo.style.display = 'block';
+    } else {
+      jamInfo.style.display = 'none';
+    }
   }
 
+  // Input durasi manual
+  document.getElementById('edit-durasi-wrap').style.display = 'block';
+  const inpDur = document.getElementById('inp-durasi-edit');
+  inpDur.value       = fmtSec(j.durasi || 0);
+  inpDur.placeholder = '00:00:00';
+
   document.getElementById('btn-batal-edit').style.display = 'inline-flex';
-  document.getElementById('form-title-label').textContent  = 'Edit Pekerjaan';
+  document.getElementById('form-title-label').textContent  = '✏️ Edit Pekerjaan';
 
   showPage('pekerjaan');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -380,14 +390,20 @@ function openEdit(id) {
 function cancelEdit() {
   editJobId = null;
 
-  // Tampilkan kembali mode toggle & blok timer sesuai mode aktif
-  const modeToggle = document.querySelector('.mode-toggle');
-  if (modeToggle) modeToggle.style.display = '';
-  const modeGroup = modeToggle ? modeToggle.closest('.form-group') : null;
-  if (modeGroup) modeGroup.style.display = '';
+  // Aktifkan kembali mode toggle
+  const modeGroup = document.querySelector('.mode-toggle')?.closest('.form-group');
+  if (modeGroup) {
+    modeGroup.style.opacity       = '';
+    modeGroup.style.pointerEvents = '';
+    modeGroup.title = '';
+  }
 
-  document.getElementById('sw-block').style.display   = timerMode === 'stopwatch' ? 'block' : 'none';
-  document.getElementById('wib-block').style.display  = timerMode === 'wib'        ? 'block' : 'none';
+  document.getElementById('sw-block').style.display  = timerMode === 'stopwatch' ? 'block' : 'none';
+  document.getElementById('wib-block').style.display = timerMode === 'wib'        ? 'block' : 'none';
+
+  const jamInfo = document.getElementById('edit-jam-info');
+  if (jamInfo) jamInfo.style.display = 'none';
+
   document.getElementById('edit-durasi-wrap').style.display = 'none';
   document.getElementById('btn-batal-edit').style.display   = 'none';
   document.getElementById('form-title-label').textContent   = 'Input Pekerjaan Baru';
@@ -420,16 +436,28 @@ function actionBtns(id) {
     <button class="btn-icon danger" onclick="openHapus('${id}')" title="Hapus"><svg viewBox="0 0 16 16" fill="none"><path d="M3 5h10M6 5V3h4v2M6 8v5M10 8v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
   </div>`;
 }
-const TEMPAT_ICON = {'Dirumah':'🏠','DiKantor':'🏢','Remote':'💻','Coworking':'☕'};
+const TEMPAT_ICON  = {'Dirumah':'🏠','DiKantor':'🏢','Remote':'💻','Coworking':'☕'};
+const TEMPAT_LABEL = {'Dirumah':'Di Rumah','DiKantor':'Di Kantor','Remote':'Remote','Coworking':'Coworking'};
+
 function renderRow(j) {
-  const tempatIcon = TEMPAT_ICON[j.tahun] || '';
-  const tempatLabel = j.tahun ? `${tempatIcon} ${j.tahun}` : '—';
+  const icon       = TEMPAT_ICON[j.tahun]  || '';
+  const label      = TEMPAT_LABEL[j.tahun] || j.tahun || '—';
+  const tempatStr  = `${icon} ${label}`.trim();
+
+  // Jam kerja
+  const jamStr = (j.wibMulai && j.wibSelesai)
+    ? `${j.wibMulai} – ${j.wibSelesai}`
+    : j.wibMulai
+      ? `${j.wibMulai} – ...`
+      : '—';
+
   return `<tr>
     <td title="${j.nama}">${j.nama}</td>
     <td>${katBadge(j.kategori)}</td>
     <td>${fmtTgl(j.tgl)}</td>
-    <td><span style="font-family:var(--mono);font-size:12.5px">${fmtSec(j.durasi)}</span></td>
-    <td><span style="font-size:12px">${tempatLabel}</span></td>
+    <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${jamStr}</td>
+    <td style="font-family:var(--mono);font-size:12px">${fmtSec(j.durasi)}</td>
+    <td style="font-size:12px;white-space:nowrap">${tempatStr}</td>
     <td>${actionBtns(j.id)}</td>
   </tr>`;
 }
