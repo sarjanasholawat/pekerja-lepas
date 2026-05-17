@@ -25,7 +25,10 @@ function doLogout() { sessionStorage.removeItem('pl_session'); window.location.h
 // ==================== KONSTANTA ====================
 const HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const BULAN_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 const KOP_KEY = 'pl_kop_surat';
+const TEMPAT_ICON  = { 'Dirumah':'🏠', 'DiKantor':'🏢' };
+const TEMPAT_LABEL = { 'Dirumah':'Di Rumah', 'DiKantor':'Di Kantor' };
 
 // ==================== STATE ====================
 let jobs = [], filterMonth = 'all', laporanFilter = 'all', laporanFilterKat = 'all';
@@ -246,64 +249,80 @@ function saveJobsLocal(jobsList) {
 
 // ── Load jobs — coba API dulu, fallback ke localStorage ──
 async function loadJobs() {
-  try {
-    const res = await API.getJobs(plSession.id);
-    if (res.success && res.data) {
-      // Gabungkan: data API mungkin tidak punya field baru (wibMulai dll)
-      // Merge dengan localStorage untuk field yang hilang
-      const local = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
-      const localMap = {};
-      local.forEach(j => localMap[String(j.id)] = j);
+  // Jika API belum dikonfigurasi, langsung pakai localStorage
+  const apiReady = typeof API_URL !== 'undefined' && !API_URL.includes('GANTI_DENGAN');
 
-      jobs = res.data.map(j => {
-        const loc = localMap[String(j.id)] || {};
-        return {
-          ...j,
-          wibMulai:   j.wibMulai   || loc.wibMulai   || '',
-          wibSelesai: j.wibSelesai || loc.wibSelesai || '',
-          tahun:      j.tahun      || loc.tahun      || 'Dirumah',
-          kategori:   j.kategori   || loc.kategori   || '',
-        };
-      });
-      saveJobsLocal(jobs);
-    } else {
-      // API gagal — pakai localStorage
-      jobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
-    }
-  } catch(_) {
-    // API tidak tersedia — pakai localStorage
-    jobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+  if (apiReady) {
+    try {
+      const res = await API.getJobs(plSession.id);
+      if (res.success && res.data) {
+        const local    = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+        const localMap = {};
+        local.forEach(j => { localMap[String(j.id)] = j; });
+        jobs = res.data.map(j => {
+          const loc = localMap[String(j.id)] || {};
+          return {
+            ...j,
+            wibMulai:   j.wibMulai   || loc.wibMulai   || '',
+            wibSelesai: j.wibSelesai || loc.wibSelesai || '',
+            tahun:      j.tahun      || loc.tahun      || 'Dirumah',
+            kategori:   j.kategori   || loc.kategori   || '',
+          };
+        });
+        saveJobsLocal(jobs);
+        renderDash(); renderPekList(); updateKategoriFilter();
+        return;
+      }
+    } catch(_) {}
   }
+
+  // Fallback: baca dari localStorage
+  jobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
   renderDash();
   renderPekList();
   updateKategoriFilter();
 }
 
 function updateKategoriFilter() {
-  const kats = [...new Set(jobs.map(j=>j.kategori).filter(Boolean))];
   const sel = document.getElementById('laporan-filter-kategori');
-  const cur = sel.value;
+  if (!sel) return;
+  const kats = [...new Set(jobs.map(j => j.kategori).filter(Boolean))];
+  const cur  = sel.value;
   sel.innerHTML = '<option value="all">Semua Kategori</option>';
-  kats.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o); });
-  if ([...sel.options].find(o=>o.value===cur)) sel.value=cur;
+  kats.forEach(k => {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = k;
+    sel.appendChild(o);
+  });
+  if ([...sel.options].find(o => o.value === cur)) sel.value = cur;
 }
 
 // ==================== NAVIGASI ====================
 function showPage(p) {
   // Update sidebar active state
-  document.querySelectorAll('.sb-nav-item').forEach(b=>b.classList.remove('active'));
-  const nb=document.getElementById('nav-'+p);
-  if(nb) nb.classList.add('active');
+  document.querySelectorAll('.sb-nav-item').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('nav-' + p);
+  if (nb) nb.classList.add('active');
+
   // Update topbar title
-  const titles={dashboard:'Dashboard',pekerjaan:'Pekerjaan',laporan:'Laporan PDF'};
-  if(window._setTopbarTitle) window._setTopbarTitle(titles[p]||p);
-  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['dashboard','pekerjaan','laporan'][i]===p));
+  const titles = {
+    dashboard : 'Dashboard',
+    pekerjaan : 'Pekerjaan',
+    laporan   : 'Laporan PDF',
+    proyek    : 'Proyek',
+    kanban    : 'Papan Tugas'
+  };
+  if (window._setTopbarTitle) window._setTopbarTitle(titles[p] || p);
+
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.getElementById(p).classList.add('active');
-  if (p==='dashboard') renderDash();
-  if (p==='pekerjaan') { cancelEdit(); renderPekList(); }
-  if (p==='laporan')   renderLaporan();
-  if (p!=='pekerjaan') stopWIBClock();
+
+  if (p === 'dashboard') renderDash();
+  if (p === 'pekerjaan') { cancelEdit(); renderPekList(); populateProyekDropdown(); }
+  if (p === 'laporan')   renderLaporan();
+  if (p === 'proyek')    { if (typeof initProjectsPage !== 'undefined') initProjectsPage(); }
+  if (p === 'kanban')    { if (typeof initKanbanPage   !== 'undefined') initKanbanPage(); }
+  if (p !== 'pekerjaan') stopWIBClock();
 }
 
 // ==================== SIMPAN / UPDATE ====================
@@ -503,12 +522,9 @@ function actionBtns(id) {
     <button class="btn-icon danger" onclick="openHapus('${id}')" title="Hapus"><svg viewBox="0 0 16 16" fill="none"><path d="M3 5h10M6 5V3h4v2M6 8v5M10 8v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
   </div>`;
 }
-const TEMPAT_ICON  = {'Dirumah':'🏠','DiKantor':'🏢','Remote':'💻','Coworking':'☕'};
-const TEMPAT_LABEL = {'Dirumah':'Di Rumah','DiKantor':'Di Kantor','Remote':'Remote','Coworking':'Coworking'};
-
 function renderRow(j) {
-  const icon       = TEMPAT_ICON[j.tahun]  || '';
-  const label      = TEMPAT_LABEL[j.tahun] || j.tahun || '—';
+  const icon      = TEMPAT_ICON[j.tahun]  || '';
+  const label     = TEMPAT_LABEL[j.tahun] || j.tahun || '—';
   const tempatStr  = `${icon} ${label}`.trim();
 
   // Jam kerja
@@ -593,7 +609,7 @@ function renderChart() {
     colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
 
   } else if (chartPeriod === 'bulanan') {
-    const BULAN_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    // Gunakan BULAN_SHORT dari konstanta global
     for (let m = 0; m < 12; m++) {
       labels.push(BULAN_SHORT[m]);
       const jj = jobs.filter(j => {
