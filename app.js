@@ -236,12 +236,47 @@ function getKategori() {
 }
 
 // ==================== LOAD DATA ====================
+// ── KEY localStorage per user ──
+const LOCAL_JOBS_KEY = () => `pl_jobs_u${plSession?.id || 'x'}`;
+
+// ── Simpan jobs ke localStorage (fallback & sinkron) ──
+function saveJobsLocal(jobsList) {
+  localStorage.setItem(LOCAL_JOBS_KEY(), JSON.stringify(jobsList));
+}
+
+// ── Load jobs — coba API dulu, fallback ke localStorage ──
 async function loadJobs() {
   try {
     const res = await API.getJobs(plSession.id);
-    if (res.success) { jobs=res.data; renderDash(); renderPekList(); updateKategoriFilter(); }
-    else showToast('Gagal memuat data','error');
-  } catch(err) { showToast('Gagal terhubung ke server','error'); }
+    if (res.success && res.data) {
+      // Gabungkan: data API mungkin tidak punya field baru (wibMulai dll)
+      // Merge dengan localStorage untuk field yang hilang
+      const local = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+      const localMap = {};
+      local.forEach(j => localMap[String(j.id)] = j);
+
+      jobs = res.data.map(j => {
+        const loc = localMap[String(j.id)] || {};
+        return {
+          ...j,
+          wibMulai:   j.wibMulai   || loc.wibMulai   || '',
+          wibSelesai: j.wibSelesai || loc.wibSelesai || '',
+          tahun:      j.tahun      || loc.tahun      || 'Dirumah',
+          kategori:   j.kategori   || loc.kategori   || '',
+        };
+      });
+      saveJobsLocal(jobs);
+    } else {
+      // API gagal — pakai localStorage
+      jobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+    }
+  } catch(_) {
+    // API tidak tersedia — pakai localStorage
+    jobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+  }
+  renderDash();
+  renderPekList();
+  updateKategoriFilter();
 }
 
 function updateKategoriFilter() {
@@ -306,29 +341,48 @@ async function savePekerjaan() {
     wibMulai   = document.getElementById('wib-mulai')?.value   || '';
     wibSelesai = document.getElementById('wib-selesai')?.value || '';
   }
-  const job = { nama, tgl, hari, tahun, durasi, status:'selesai', kategori:kat, wibMulai, wibSelesai };
+  const job = {
+    id: editJobId || ('JOB_' + Date.now()),
+    userId: plSession.id,
+    nama, tgl, hari,
+    tahun,       // tempat kerja: 'Dirumah' | 'DiKantor'
+    durasi,
+    status: 'selesai',
+    kategori: kat,
+    wibMulai,
+    wibSelesai,
+    createdAt: new Date().toISOString()
+  };
+
   const btn = document.getElementById('btn-simpan');
-  btn.disabled=true; btn.textContent='Menyimpan...';
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
 
   try {
-    let res;
+    // ── Simpan ke localStorage (utama — semua field tersimpan) ──
+    let localJobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
     if (editJobId) {
-      await API.deleteJob(plSession.id, editJobId);
-      res = await API.saveJob(plSession.id, job);
-    } else {
-      res = await API.saveJob(plSession.id, job);
+      localJobs = localJobs.filter(j => String(j.id) !== String(editJobId));
     }
-    if (!res.success) { showToast('Gagal: '+res.error,'error'); return; }
+    localJobs.unshift(job);
+    saveJobsLocal(localJobs);
+
+    // ── Kirim ke API jika tersedia ──
+    try {
+      if (editJobId) await API.deleteJob(plSession.id, editJobId).catch(()=>{});
+      await API.saveJob(plSession.id, { ...job }).catch(()=>{});
+    } catch(_) { /* API tidak tersedia — data sudah aman di localStorage */ }
+
     showToast(editJobId ? 'Pekerjaan diperbarui!' : 'Pekerjaan disimpan!');
     cancelEdit();
-    document.getElementById('inp-nama').value='';
-    document.getElementById('inp-kategori').value='';
+    document.getElementById('inp-nama').value     = '';
+    document.getElementById('inp-kategori').value = '';
     swReset();
     await loadJobs();
-  } catch(err) { showToast('Error: '+err.message,'error'); }
-  finally {
-    btn.disabled=false;
-    btn.innerHTML=`<svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M13 5l-6 6-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Simpan Pekerjaan`;
+  } catch(err) {
+    showToast('Gagal menyimpan: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px"><path d="M13 5l-6 6-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Simpan Pekerjaan`;
   }
 }
 
@@ -427,10 +481,16 @@ function openHapus(id) {
 }
 async function confirmHapus() {
   try {
-    const res=await API.deleteJob(plSession.id,hapusTargetId);
-    if(!res.success){showToast('Gagal: '+res.error,'error');return;}
-    closeModal('modal-hapus'); showToast('Pekerjaan dihapus'); await loadJobs();
-  } catch(err){showToast('Error: '+err.message,'error');}
+    // Hapus dari localStorage dulu
+    let localJobs = JSON.parse(localStorage.getItem(LOCAL_JOBS_KEY()) || '[]');
+    localJobs = localJobs.filter(j => String(j.id) !== String(hapusTargetId));
+    saveJobsLocal(localJobs);
+    // Coba hapus dari API juga
+    await API.deleteJob(plSession.id, hapusTargetId).catch(()=>{});
+    closeModal('modal-hapus');
+    showToast('Pekerjaan dihapus');
+    await loadJobs();
+  } catch(err) { showToast('Error: '+err.message,'error'); }
 }
 
 // ==================== RENDER ROW ====================
@@ -727,7 +787,7 @@ function renderDash() {
   let fr=`<button class="fbtn ${filterMonth==='all'?'active':''}" onclick="setFilter('all')">Semua</button>`;
   months.forEach(m=>{fr+=`<button class="fbtn ${filterMonth==m?'active':''}" onclick="setFilter(${m})">${BULAN[m]}</button>`;});
   document.getElementById('filter-row').innerHTML=fr;
-  document.getElementById('dash-tbody').innerHTML=fl.length?fl.map(renderRow).join(''):`<tr><td colspan="6" class="empty">Belum ada data</td></tr>`;
+  document.getElementById('dash-tbody').innerHTML=fl.length?fl.map(renderRow).join(''):`<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
 
   // Render grafik
   initChartYearSelector();
@@ -737,7 +797,7 @@ function setFilter(m){filterMonth=m;renderDash();}
 
 // ==================== DAFTAR PEKERJAAN ====================
 function renderPekList(){
-  document.getElementById('pek-tbody').innerHTML=jobs.length?jobs.map(renderRow).join(''):`<tr><td colspan="6" class="empty">Belum ada data</td></tr>`;
+  document.getElementById('pek-tbody').innerHTML=jobs.length?jobs.map(renderRow).join(''):`<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
 }
 
 // ==================== KOP SURAT DARI ADMIN ====================
@@ -785,27 +845,27 @@ function renderLaporan() {
     <div class="rstat"><div class="rstat-label">Total Durasi</div><div class="rstat-val" style="font-size:14px">${fmtSec(totalSec)}</div></div>
     <div class="rstat"><div class="rstat-label">Hari Ini</div><div class="rstat-val">${jobs.filter(j=>j.tgl===today).length}</div></div>
   `;
-  document.getElementById('print-tbody').innerHTML=fl.length
-    ?fl.map((j,i)=>{
-      const tIcon = TEMPAT_ICON[j.tahun]||'';
-      const durSec = j.durasi||0;
-      const jamMulai   = j.wibMulai   || '';
-      const jamSelesai = j.wibSelesai || '';
-      const jamStr = (jamMulai && jamSelesai)
-        ? `${jamMulai} – ${jamSelesai}`
-        : jamMulai
-          ? `${jamMulai} – sekarang`
-          : fmtSec(durSec);
-      return `<tr>
-        <td>${i+1}</td>
-        <td title="${j.nama}">${j.nama}</td>
-        <td>${katBadge(j.kategori)}</td>
-        <td>${fmtTgl(j.tgl)}</td>
-        <td style="font-family:var(--mono);font-size:12px">${jamStr}</td>
-        <td style="font-family:var(--mono);font-size:12px">${fmtSec(durSec)}</td>
-        <td style="font-size:12px">${tIcon} ${j.tahun||'—'}</td>
-      </tr>`;}).join('')
-    :`<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
+  document.getElementById('print-tbody').innerHTML = fl.length
+    ? fl.map((j, i) => {
+        const durSec     = j.durasi || 0;
+        const jamMulai   = j.wibMulai   || '';
+        const jamSelesai = j.wibSelesai || '';
+        const jamStr     = (jamMulai && jamSelesai)
+          ? `${jamMulai} – ${jamSelesai}`
+          : jamMulai ? `${jamMulai} – ...` : fmtSec(durSec);
+        const tIcon      = TEMPAT_ICON[j.tahun]  || '';
+        const tLabel     = TEMPAT_LABEL[j.tahun] || j.tahun || '—';
+        return `<tr>
+          <td>${i + 1}</td>
+          <td title="${j.nama}">${j.nama}</td>
+          <td>${katBadge(j.kategori)}</td>
+          <td>${fmtTgl(j.tgl)}</td>
+          <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${jamStr}</td>
+          <td style="font-family:var(--mono);font-size:12px">${fmtSec(durSec)}</td>
+          <td style="font-size:12px;white-space:nowrap">${tIcon} ${tLabel}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
 }
 function setLaporanFilter(m){laporanFilter=m;renderLaporan();}
 function setLaporanFilterKategori(v){laporanFilterKat=v;renderLaporan();}
@@ -841,12 +901,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:#1C2D40;pa
 .rstat{background:#E6F1FB;border:1px solid #B5D4F4;border-radius:6px;padding:9px 11px}
 .rstat-label{font-size:10px;color:#185FA5;font-weight:600;text-transform:uppercase;margin-bottom:3px}
 .rstat-val{font-size:15px;font-weight:700;color:#0C447C;font-family:'JetBrains Mono',monospace}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:18px}
 th{text-align:left;padding:6px 8px;background:#E6F1FB;color:#185FA5;border-bottom:1px solid #B5D4F4;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px}
-td{padding:6px 8px;border-bottom:1px solid #EEF2F8;color:#1C2D40;font-size:11.5px}
+td{padding:6px 8px;border-bottom:1px solid #EEF2F8;color:#1C2D40;font-size:11px}
 tr:last-child td{border-bottom:none}
+.mono{font-family:'JetBrains Mono',monospace}
 .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:#E6F1FB;color:#0C447C;font-weight:600}
-.empty{text-align:center;padding:1rem;color:#8BA5C4;font-style:italic}
+.nowrap{white-space:nowrap}
 .ttd-section{display:grid;grid-template-columns:1fr 1fr;gap:2rem;padding-top:14px;border-top:1px solid #D8E4F2}
 .ttd-box{text-align:center}
 .ttd-label{font-size:11px;color:#8BA5C4;margin-bottom:3px}
