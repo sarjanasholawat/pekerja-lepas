@@ -1497,3 +1497,18 @@ input[type="time"]:focus {
   .chart-wrap { height: 220px; }
   .chart-type-row { flex-wrap: wrap; }
 }
+
+/* WIB time badge — tampilkan jam tercatat */
+.wib-time-badge {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--blue-dark);
+  background: var(--blue-light);
+  border: 1px solid var(--blue-border);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  display: inline-block;
+  min-width: 80px;
+  text-align: center;
+}

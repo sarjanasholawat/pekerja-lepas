@@ -86,31 +86,36 @@ function setMode(mode) {
   timerMode = mode;
   document.getElementById('mode-sw').classList.toggle('active', mode==='stopwatch');
   document.getElementById('mode-wib').classList.toggle('active', mode==='wib');
-  document.getElementById('sw-block').style.display   = mode==='stopwatch' ? 'block' : 'none';
-  document.getElementById('wib-block').style.display  = mode==='wib'       ? 'block' : 'none';
+  document.getElementById('sw-block').style.display  = mode==='stopwatch' ? 'block' : 'none';
+  document.getElementById('wib-block').style.display = mode==='wib'       ? 'block' : 'none';
 
   if (mode === 'wib') {
     startWIBClock();
-    // Isi jam mulai dengan jam WIB sekarang
-    const now = new Date();
-    const wibOffset = 7*60;
-    const utc = now.getTime() + now.getTimezoneOffset()*60000;
-    const wib = new Date(utc + wibOffset*60000);
-    document.getElementById('wib-mulai').value =
-      String(wib.getHours()).padStart(2,'0') + ':' + String(wib.getMinutes()).padStart(2,'0');
-    hitungDurasiWIB();
+    // Reset state tombol
+    document.getElementById('wib-btn-mulai').disabled  = false;
+    document.getElementById('wib-btn-selesai').disabled = false;
   } else {
     stopWIBClock();
   }
 }
 
+// ── Ambil jam WIB sekarang ──
+function getWIBNow() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset()*60000;
+  return new Date(utc + 7*3600000);
+}
+
+function wibStr(wib) {
+  return String(wib.getHours()).padStart(2,'0') + ':' + String(wib.getMinutes()).padStart(2,'0');
+}
+
 function startWIBClock() {
   stopWIBClock();
   function tick() {
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset()*60000;
-    const wib = new Date(utc + 7*3600000);
-    document.getElementById('jam-wib-live').textContent = fmtSec(wib.getHours()*3600 + wib.getMinutes()*60 + wib.getSeconds());
+    const wib = getWIBNow();
+    document.getElementById('jam-wib-live').textContent =
+      fmtSec(wib.getHours()*3600 + wib.getMinutes()*60 + wib.getSeconds());
     hitungDurasiWIB();
   }
   tick();
@@ -121,6 +126,44 @@ function stopWIBClock() {
   if (wibClockInterval) { clearInterval(wibClockInterval); wibClockInterval = null; }
 }
 
+// Tombol Mulai WIB — catat jam mulai
+function wibCatatMulai() {
+  const wib = getWIBNow();
+  const jam  = wibStr(wib);
+  document.getElementById('wib-mulai').value         = jam;
+  document.getElementById('wib-mulai-display').textContent = jam;
+  // Reset selesai
+  document.getElementById('wib-selesai').value           = '';
+  document.getElementById('wib-selesai-display').textContent = '—';
+  document.getElementById('wib-durasi-display').textContent  = '00:00:00';
+  // Disable tombol mulai, enable selesai
+  document.getElementById('wib-btn-mulai').disabled  = true;
+  document.getElementById('wib-btn-selesai').disabled = false;
+  showToast('Jam mulai tercatat: ' + jam);
+}
+
+// Tombol Selesai WIB — catat jam selesai
+function wibCatatSelesai() {
+  const mulai = document.getElementById('wib-mulai').value;
+  if (!mulai) { showToast('Klik Mulai terlebih dahulu','error'); return; }
+  const wib  = getWIBNow();
+  const jam  = wibStr(wib);
+  document.getElementById('wib-selesai').value              = jam;
+  document.getElementById('wib-selesai-display').textContent = jam;
+  hitungDurasiWIB();
+  document.getElementById('wib-btn-selesai').disabled = true;
+  showToast('Jam selesai tercatat: ' + jam);
+}
+
+function wibReset() {
+  ['wib-mulai','wib-selesai'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('wib-mulai-display').textContent   = '—';
+  document.getElementById('wib-selesai-display').textContent  = '—';
+  document.getElementById('wib-durasi-display').textContent   = '00:00:00';
+  document.getElementById('wib-btn-mulai').disabled  = false;
+  document.getElementById('wib-btn-selesai').disabled = false;
+}
+
 function hitungDurasiWIB() {
   const mulai   = document.getElementById('wib-mulai').value;
   const selesai = document.getElementById('wib-selesai').value;
@@ -129,15 +172,13 @@ function hitungDurasiWIB() {
   let totalSec;
   if (selesai) {
     const [sh,sm] = selesai.split(':').map(Number);
-    let diff = (sh*60+sm) - (mh*60+mm);
-    if (diff < 0) diff += 24*60; // melewati tengah malam
+    let diff = (sh*60+sm)-(mh*60+mm);
+    if (diff < 0) diff += 24*60;
     totalSec = diff * 60;
   } else {
-    // Hitung sampai jam WIB sekarang
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset()*60000;
-    const wib = new Date(utc + 7*3600000);
-    let diff = (wib.getHours()*60 + wib.getMinutes()) - (mh*60+mm);
+    // Hitung live sampai sekarang
+    const wib = getWIBNow();
+    let diff = (wib.getHours()*60+wib.getMinutes())-(mh*60+mm);
     if (diff < 0) diff = 0;
     totalSec = diff * 60 + wib.getSeconds();
   }
@@ -145,18 +186,16 @@ function hitungDurasiWIB() {
 }
 
 function getDurasi() {
-  if (editJobId) {
-    return parseDurasi(document.getElementById('inp-durasi-edit').value.trim());
-  }
+  if (editJobId) return parseDurasi(document.getElementById('inp-durasi-edit').value.trim());
   if (timerMode === 'stopwatch') return swSec;
-  // WIB mode
+  // WIB: hitung dari jam mulai & selesai
   const mulai   = document.getElementById('wib-mulai').value;
   const selesai = document.getElementById('wib-selesai').value;
   if (!mulai) return 0;
   const [mh,mm] = mulai.split(':').map(Number);
   if (selesai) {
     const [sh,sm] = selesai.split(':').map(Number);
-    let diff = (sh*60+sm) - (mh*60+mm);
+    let diff = (sh*60+sm)-(mh*60+mm);
     if (diff < 0) diff += 24*60;
     return diff * 60;
   }
@@ -311,6 +350,7 @@ function cancelEdit() {
   document.getElementById('edit-durasi-wrap').style.display='none';
   document.getElementById('btn-batal-edit').style.display='none';
   document.getElementById('form-title-label').textContent='Input Pekerjaan Baru';
+  if (timerMode==='wib') wibReset();
 }
 
 // ==================== HAPUS ====================
@@ -672,9 +712,13 @@ function renderLaporan() {
     ?fl.map((j,i)=>{
       const tIcon = TEMPAT_ICON[j.tahun]||'';
       const durSec = j.durasi||0;
-      const jamMulai = j.wibMulai||'—';
-      const jamSelesai = j.wibSelesai||'—';
-      const jamStr = (j.wibMulai&&j.wibSelesai) ? `${jamMulai} – ${jamSelesai}` : fmtSec(durSec);
+      const jamMulai   = j.wibMulai   || '';
+      const jamSelesai = j.wibSelesai || '';
+      const jamStr = (jamMulai && jamSelesai)
+        ? `${jamMulai} – ${jamSelesai}`
+        : jamMulai
+          ? `${jamMulai} – sekarang`
+          : fmtSec(durSec);
       return `<tr>
         <td>${i+1}</td>
         <td title="${j.nama}">${j.nama}</td>
