@@ -286,9 +286,19 @@ async function savePekerjaan() {
     return;
   }
 
-  // Ambil jam mulai/selesai jika mode WIB
-  const wibMulai   = timerMode==='wib' ? (document.getElementById('wib-mulai')?.value||'') : '';
-  const wibSelesai = timerMode==='wib' ? (document.getElementById('wib-selesai')?.value||'') : '';
+  // Ambil jam mulai/selesai
+  // Mode edit: pertahankan dari data lama kecuali user ganti ke mode WIB
+  let wibMulai   = '';
+  let wibSelesai = '';
+  if (editJobId) {
+    // Edit: pakai data lama (tidak ada input WIB di mode edit)
+    const oldJob = jobs.find(j => String(j.id) === String(editJobId));
+    wibMulai   = oldJob?.wibMulai   || '';
+    wibSelesai = oldJob?.wibSelesai || '';
+  } else if (timerMode === 'wib') {
+    wibMulai   = document.getElementById('wib-mulai')?.value   || '';
+    wibSelesai = document.getElementById('wib-selesai')?.value || '';
+  }
   const job = { nama, tgl, hari, tahun, durasi, status:'selesai', kategori:kat, wibMulai, wibSelesai };
   const btn = document.getElementById('btn-simpan');
   btn.disabled=true; btn.textContent='Menyimpan...';
@@ -317,40 +327,72 @@ async function savePekerjaan() {
 
 // ==================== EDIT ====================
 function openEdit(id) {
-  const j=jobs.find(j=>String(j.id)===String(id)); if(!j)return;
-  editJobId=id;
-  document.getElementById('inp-nama').value=j.nama;
-  document.getElementById('inp-tgl').value=j.tgl;
-  document.getElementById('inp-hari').value=j.hari;
-  // tempat kerja
-  const twEl=document.getElementById('inp-tahun'); if(twEl) twEl.value=j.tahun||'Dirumah';
-  // Kategori
-  const sel=document.getElementById('inp-kategori');
-  const exists=[...sel.options].find(o=>o.value===j.kategori);
-  if(!exists && j.kategori && j.kategori!=='—'){
-    const o=document.createElement('option');o.value=j.kategori;o.textContent='📂 '+j.kategori;
-    sel.insertBefore(o,sel.querySelector('option[value="__custom__"]'));
-  }
-  sel.value=j.kategori||'';
+  const j = jobs.find(j => String(j.id) === String(id));
+  if (!j) return;
+  editJobId = id;
 
-  document.getElementById('sw-block').style.display='none';
-  document.getElementById('wib-block').style.display='none';
-  document.getElementById('mode-toggle') && (document.querySelector('.mode-toggle').style.opacity='0.4');
-  document.getElementById('edit-durasi-wrap').style.display='block';
-  document.getElementById('inp-durasi-edit').value=fmtSec(j.durasi);
-  document.getElementById('btn-batal-edit').style.display='inline-flex';
-  document.getElementById('form-title-label').textContent='Edit Pekerjaan';
+  // Isi semua field form
+  document.getElementById('inp-nama').value = j.nama;
+  document.getElementById('inp-tgl').value  = j.tgl;
+  document.getElementById('inp-hari').value = j.hari;
+
+  // Tempat kerja (select 2 pilihan)
+  const twEl = document.getElementById('inp-tahun');
+  if (twEl) twEl.value = j.tahun || 'Dirumah';
+
+  // Proyek/kategori
+  const selKat = document.getElementById('inp-kategori');
+  if (selKat) {
+    const exists = [...selKat.options].find(o => o.value === j.kategori);
+    if (!exists && j.kategori && j.kategori !== '—') {
+      const o = document.createElement('option');
+      o.value = j.kategori; o.textContent = j.kategori;
+      selKat.appendChild(o);
+    }
+    selKat.value = j.kategori || '';
+  }
+
+  // Sembunyikan mode toggle & blok timer, tampilkan input durasi manual
+  document.getElementById('sw-block').style.display   = 'none';
+  document.getElementById('wib-block').style.display  = 'none';
+  const modeToggle = document.querySelector('.mode-toggle');
+  if (modeToggle) modeToggle.style.display = 'none';
+  const modeGroup = modeToggle ? modeToggle.closest('.form-group') : null;
+  if (modeGroup) modeGroup.style.display = 'none';
+
+  // Isi durasi manual
+  document.getElementById('edit-durasi-wrap').style.display = 'block';
+  document.getElementById('inp-durasi-edit').value = fmtSec(j.durasi || 0);
+
+  // Isi info jam WIB jika ada (untuk referensi user saat edit)
+  if (j.wibMulai) {
+    const hint = document.getElementById('inp-durasi-edit');
+    hint.placeholder = `Jam: ${j.wibMulai}${j.wibSelesai ? ' – ' + j.wibSelesai : ''}`;
+  }
+
+  document.getElementById('btn-batal-edit').style.display = 'inline-flex';
+  document.getElementById('form-title-label').textContent  = 'Edit Pekerjaan';
+
   showPage('pekerjaan');
-  window.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 function cancelEdit() {
-  editJobId=null;
-  document.getElementById('sw-block').style.display = timerMode==='stopwatch'?'block':'none';
-  document.getElementById('wib-block').style.display = timerMode==='wib'?'block':'none';
-  document.getElementById('edit-durasi-wrap').style.display='none';
-  document.getElementById('btn-batal-edit').style.display='none';
-  document.getElementById('form-title-label').textContent='Input Pekerjaan Baru';
-  if (timerMode==='wib') wibReset();
+  editJobId = null;
+
+  // Tampilkan kembali mode toggle & blok timer sesuai mode aktif
+  const modeToggle = document.querySelector('.mode-toggle');
+  if (modeToggle) modeToggle.style.display = '';
+  const modeGroup = modeToggle ? modeToggle.closest('.form-group') : null;
+  if (modeGroup) modeGroup.style.display = '';
+
+  document.getElementById('sw-block').style.display   = timerMode === 'stopwatch' ? 'block' : 'none';
+  document.getElementById('wib-block').style.display  = timerMode === 'wib'        ? 'block' : 'none';
+  document.getElementById('edit-durasi-wrap').style.display = 'none';
+  document.getElementById('btn-batal-edit').style.display   = 'none';
+  document.getElementById('form-title-label').textContent   = 'Input Pekerjaan Baru';
+
+  if (timerMode === 'wib') wibReset();
 }
 
 // ==================== HAPUS ====================
