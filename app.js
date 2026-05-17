@@ -347,18 +347,24 @@ async function savePekerjaan() {
     return;
   }
 
-  // Ambil jam mulai/selesai
-  // Mode edit: pertahankan dari data lama kecuali user ganti ke mode WIB
-  let wibMulai   = '';
-  let wibSelesai = '';
+  // ── Hitung jam mulai & selesai ──
+  let wibMulai = '', wibSelesai = '';
+
   if (editJobId) {
-    // Edit: pakai data lama (tidak ada input WIB di mode edit)
+    // Edit: pertahankan data jam lama
     const oldJob = jobs.find(j => String(j.id) === String(editJobId));
     wibMulai   = oldJob?.wibMulai   || '';
     wibSelesai = oldJob?.wibSelesai || '';
   } else if (timerMode === 'wib') {
+    // Mode WIB: ambil dari hidden input yang diisi tombol Mulai/Selesai
     wibMulai   = document.getElementById('wib-mulai')?.value   || '';
     wibSelesai = document.getElementById('wib-selesai')?.value || '';
+  } else {
+    // Mode Stopwatch: hitung mundur dari sekarang berdasarkan durasi
+    const selesaiWIB = getWIBNow();
+    const mulaiWIB   = new Date(selesaiWIB.getTime() - durasi * 1000);
+    wibSelesai = wibStr(selesaiWIB);
+    wibMulai   = wibStr(mulaiWIB);
   }
   const job = {
     id: editJobId || ('JOB_' + Date.now()),
