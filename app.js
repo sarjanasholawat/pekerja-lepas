@@ -874,14 +874,14 @@ function renderLaporan() {
   updateKategoriFilter();
 
   let fl = laporanFilter === 'all' ? jobs : jobs.filter(j => new Date(j.tgl).getMonth() === parseInt(laporanFilter));
-  if (laporanFilterKat    !== 'all') fl = fl.filter(j => j.kategori === laporanFilterKat);
-  if (laporanFilterProyek !== 'all') fl = fl.filter(j => j.kategori === laporanFilterProyek);
+  if (laporanFilterProyek !== 'all') fl = fl.filter(j => (j.kategori || '—') === laporanFilterProyek);
+  if (laporanFilterKat    !== 'all') fl = fl.filter(j => (j.kategori || '—') === laporanFilterKat);
 
-  // Populate dropdown proyek dari data pekerjaan yang ada
+  // Populate dropdown proyek dari semua kategori/proyek yang ada di data
   const selPrj = document.getElementById('laporan-filter-proyek');
   if (selPrj) {
-    const curPrj  = selPrj.value;
-    const proyeks = [...new Set(jobs.map(j => j.kategori).filter(Boolean).filter(k => k !== '—'))];
+    const proyeks = [...new Set(jobs.map(j => j.kategori).filter(v => v && v !== '—'))];
+    const curPrj  = laporanFilterProyek;
     selPrj.innerHTML = '<option value="all">Semua Proyek</option>';
     proyeks.forEach(k => {
       const o = document.createElement('option');
@@ -889,11 +889,13 @@ function renderLaporan() {
       if (k === curPrj) o.selected = true;
       selPrj.appendChild(o);
     });
-    if (laporanFilterProyek !== 'all' && proyeks.includes(laporanFilterProyek)) selPrj.value = laporanFilterProyek;
   }
 
-  const periodeLabel=laporanFilter==='all'?'Semua Periode':BULAN[parseInt(laporanFilter)]+' '+now.getFullYear();
-  document.getElementById('report-period').textContent='Periode: '+periodeLabel+(laporanFilterKat!=='all'?' — '+laporanFilterKat:'');
+  const periodeLabel = laporanFilter === 'all'
+    ? 'Semua Periode'
+    : `${BULAN[parseInt(laporanFilter)]} ${now.getFullYear()}`;
+  const proyekLabel  = laporanFilterProyek !== 'all' ? ` | Proyek: ${laporanFilterProyek}` : '';
+  document.getElementById('report-period').textContent = 'Periode: ' + periodeLabel + proyekLabel;
   document.getElementById('report-no').textContent='LAP/'+now.getFullYear()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+String(fl.length||1).padStart(3,'0');
   const totalSec=fl.reduce((a,b)=>a+b.durasi,0);
   const today=todayStr();
