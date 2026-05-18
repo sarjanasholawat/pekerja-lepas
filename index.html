@@ -318,6 +318,10 @@
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <label style="font-size:12.5px;font-weight:600;color:var(--gray-600);white-space:nowrap">Filter Bulan:</label>
           <div class="filter-row" id="laporan-filter" style="margin:0;flex:1"></div>
+          <label style="font-size:12.5px;font-weight:600;color:var(--gray-600);white-space:nowrap">Proyek:</label>
+          <select id="laporan-filter-proyek" onchange="setLaporanFilterProyek(this.value)" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:99px;font-size:12px;background:var(--white);cursor:pointer;outline:none;min-width:140px">
+            <option value="all">Semua Proyek</option>
+          </select>
           <select id="laporan-filter-kategori" onchange="setLaporanFilterKategori(this.value)" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:99px;font-size:12px;background:var(--white);cursor:pointer;outline:none;min-width:130px">
             <option value="all">Semua Kategori</option>
           </select>

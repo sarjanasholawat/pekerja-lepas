@@ -31,7 +31,7 @@ const TEMPAT_ICON  = { 'Dirumah':'🏠', 'DiKantor':'🏢' };
 const TEMPAT_LABEL = { 'Dirumah':'Di Rumah', 'DiKantor':'Di Kantor' };
 
 // ==================== STATE ====================
-let jobs = [], filterMonth = 'all', laporanFilter = 'all', laporanFilterKat = 'all';
+let jobs = [], filterMonth = 'all', laporanFilter = 'all', laporanFilterKat = 'all', laporanFilterProyek = 'all';
 let editJobId = null, hapusTargetId = null;
 let timerMode = 'stopwatch'; // 'stopwatch' | 'wib'
 
@@ -439,60 +439,56 @@ function openEdit(id) {
   const j = jobs.find(j => String(j.id) === String(id));
   if (!j) return;
   editJobId = id;
-
-  // Isi semua field form
-  document.getElementById('inp-nama').value = j.nama;
-  document.getElementById('inp-tgl').value  = j.tgl;
-  document.getElementById('inp-hari').value = j.hari;
-
-  // Tempat kerja
-  const twEl = document.getElementById('inp-tahun');
-  if (twEl) twEl.value = j.tahun || 'Dirumah';
-
-  // Proyek/kategori
-  const selKat = document.getElementById('inp-kategori');
-  if (selKat) {
-    const exists = [...selKat.options].find(o => o.value === j.kategori);
-    if (!exists && j.kategori && j.kategori !== '—') {
-      const o = document.createElement('option');
-      o.value = j.kategori; o.textContent = j.kategori;
-      selKat.appendChild(o);
-    }
-    selKat.value = j.kategori || '';
-  }
-
-  // ── Nonaktifkan mode toggle pencatatan waktu ──
-  const modeGroup = document.querySelector('.mode-toggle')?.closest('.form-group');
-  if (modeGroup) {
-    modeGroup.style.opacity     = '0.4';
-    modeGroup.style.pointerEvents = 'none';
-    modeGroup.title = 'Mode pencatatan waktu tidak tersedia saat mengedit';
-  }
-  document.getElementById('sw-block').style.display  = 'none';
-  document.getElementById('wib-block').style.display = 'none';
-
-  // ── Tampilkan info jam lama (read-only) jika ada ──
-  const jamInfo = document.getElementById('edit-jam-info');
-  if (jamInfo) {
-    if (j.wibMulai) {
-      const jamTeks = j.wibSelesai ? `${j.wibMulai} – ${j.wibSelesai}` : `${j.wibMulai} – ...`;
-      jamInfo.textContent = `⏰ Jam tercatat: ${jamTeks}`;
-      jamInfo.style.display = 'block';
-    } else {
-      jamInfo.style.display = 'none';
-    }
-  }
-
-  // Input durasi manual
-  document.getElementById('edit-durasi-wrap').style.display = 'block';
-  const inpDur = document.getElementById('inp-durasi-edit');
-  inpDur.value       = fmtSec(j.durasi || 0);
-  inpDur.placeholder = '00:00:00';
+  // Nilai form akan diisi ulang SETELAH showPage (lihat bawah)
+  showPage('pekerjaan');
 
   document.getElementById('btn-batal-edit').style.display = 'inline-flex';
   document.getElementById('form-title-label').textContent  = '✏️ Edit Pekerjaan';
 
+  // showPage dulu (memanggil cancelEdit yg reset form)
   showPage('pekerjaan');
+
+  // Isi ulang semua nilai SETELAH showPage selesai reset
+  document.getElementById('inp-nama').value = j.nama;
+  document.getElementById('inp-tgl').value  = j.tgl;
+  document.getElementById('inp-hari').value = j.hari;
+
+  const twEl2 = document.getElementById('inp-tahun');
+  if (twEl2) twEl2.value = j.tahun || 'Dirumah';
+
+  const selKat2 = document.getElementById('inp-kategori');
+  if (selKat2) {
+    const ex = [...selKat2.options].find(o => o.value === j.kategori);
+    if (!ex && j.kategori && j.kategori !== '—') {
+      const o = document.createElement('option');
+      o.value = j.kategori; o.textContent = j.kategori;
+      selKat2.appendChild(o);
+    }
+    selKat2.value = j.kategori || '';
+  }
+
+  document.getElementById('edit-durasi-wrap').style.display = 'block';
+  document.getElementById('inp-durasi-edit').value = fmtSec(j.durasi || 0);
+
+  const jamInfo2 = document.getElementById('edit-jam-info');
+  if (jamInfo2) {
+    if (j.wibMulai) {
+      const jamTeks = j.wibSelesai ? `${j.wibMulai} – ${j.wibSelesai}` : `${j.wibMulai} – ...`;
+      jamInfo2.textContent = `⏰ Jam tercatat: ${jamTeks}`;
+      jamInfo2.style.display = 'block';
+    } else {
+      jamInfo2.style.display = 'none';
+    }
+  }
+
+  // Nonaktifkan mode toggle
+  const mg = document.querySelector('.mode-toggle')?.closest('.form-group');
+  if (mg) { mg.style.opacity = '0.4'; mg.style.pointerEvents = 'none'; }
+  document.getElementById('sw-block').style.display  = 'none';
+  document.getElementById('wib-block').style.display = 'none';
+  document.getElementById('btn-batal-edit').style.display = 'inline-flex';
+  document.getElementById('form-title-label').textContent  = '✏️ Edit Pekerjaan';
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -877,8 +873,24 @@ function renderLaporan() {
 
   updateKategoriFilter();
 
-  let fl=laporanFilter==='all'?jobs:jobs.filter(j=>new Date(j.tgl).getMonth()===parseInt(laporanFilter));
-  if(laporanFilterKat!=='all') fl=fl.filter(j=>j.kategori===laporanFilterKat);
+  let fl = laporanFilter === 'all' ? jobs : jobs.filter(j => new Date(j.tgl).getMonth() === parseInt(laporanFilter));
+  if (laporanFilterKat    !== 'all') fl = fl.filter(j => j.kategori === laporanFilterKat);
+  if (laporanFilterProyek !== 'all') fl = fl.filter(j => j.kategori === laporanFilterProyek);
+
+  // Populate dropdown proyek dari data pekerjaan yang ada
+  const selPrj = document.getElementById('laporan-filter-proyek');
+  if (selPrj) {
+    const curPrj  = selPrj.value;
+    const proyeks = [...new Set(jobs.map(j => j.kategori).filter(Boolean).filter(k => k !== '—'))];
+    selPrj.innerHTML = '<option value="all">Semua Proyek</option>';
+    proyeks.forEach(k => {
+      const o = document.createElement('option');
+      o.value = k; o.textContent = k;
+      if (k === curPrj) o.selected = true;
+      selPrj.appendChild(o);
+    });
+    if (laporanFilterProyek !== 'all' && proyeks.includes(laporanFilterProyek)) selPrj.value = laporanFilterProyek;
+  }
 
   const periodeLabel=laporanFilter==='all'?'Semua Periode':BULAN[parseInt(laporanFilter)]+' '+now.getFullYear();
   document.getElementById('report-period').textContent='Periode: '+periodeLabel+(laporanFilterKat!=='all'?' — '+laporanFilterKat:'');
@@ -912,8 +924,9 @@ function renderLaporan() {
       }).join('')
     : `<tr><td colspan="7" class="empty">Belum ada data</td></tr>`;
 }
-function setLaporanFilter(m){laporanFilter=m;renderLaporan();}
-function setLaporanFilterKategori(v){laporanFilterKat=v;renderLaporan();}
+function setLaporanFilter(m)         { laporanFilter       = m; renderLaporan(); }
+function setLaporanFilterKategori(v) { laporanFilterKat    = v; renderLaporan(); }
+function setLaporanFilterProyek(v)   { laporanFilterProyek = v; renderLaporan(); }
 
 // ==================== PRINT PDF ====================
 function doPrint(){
